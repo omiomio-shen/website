@@ -1,0 +1,279 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modified rain animation keyframes with angle variations */
+@keyframes rain-fall-left {
+  0% {
+    transform: translate(0, -100%);
+  }
+  100% {
+    transform: translate(-15px, 100%);
+  }
+}
+
+@keyframes rain-fall-slight-left {
+  0% {
+    transform: translate(0, -100%);
+  }
+  100% {
+    transform: translate(-8px, 100%);
+  }
+}
+
+@keyframes rain-fall-straight {
+  0% {
+    transform: translate(0, -100%);
+  }
+  100% {
+    transform: translate(0, 100%);
+  }
+}
+
+@keyframes rain-fall-slight-right {
+  0% {
+    transform: translate(0, -100%);
+  }
+  100% {
+    transform: translate(8px, 100%);
+  }
+}
+
+@keyframes rain-fall-right {
+  0% {
+    transform: translate(0, -100%);
+  }
+  100% {
+    transform: translate(15px, 100%);
+  }
+}
+
+/* Water splash animations */
+@keyframes ripple {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes splash {
+  0% {
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 2s ease-in forwards;
+}
+
+.duration-2000 {
+  transition-duration: 2000ms;
+}
+
+/* Rain container and layers with improved styling */
+.rain-container {
+  position: absolute;
+  width: 100%;
+  height: var(--rain-container-height, 300%);
+  overflow: hidden;
+  z-index: 25;
+}
+
+.rain-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-repeat: repeat;
+  opacity: calc(var(--rain-opacity, 0.5) * 1);
+}
+
+/* Rain layers with different angles */
+.rain-layer-1 {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cline x1='10' y1='10' x2='7' y2='20' stroke='white' stroke-width='0.6' stroke-linecap='round' opacity='0.7'/%3E%3Cline x1='45' y1='5' x2='42' y2='15' stroke='white' stroke-width='0.6' stroke-linecap='round' opacity='0.7'/%3E%3Cline x1='85' y1='7' x2='82' y2='17' stroke='white' stroke-width='0.6' stroke-linecap='round' opacity='0.7'/%3E%3Cline x1='20' y1='30' x2='17' y2='40' stroke='white' stroke-width='0.6' stroke-linecap='round' opacity='0.7'/%3E%3Cline x1='75' y1='35' x2='72' y2='45' stroke='white' stroke-width='0.6' stroke-linecap='round' opacity='0.7'/%3E%3Cline x1='35' y1='45' x2='32' y2='55' stroke='white' stroke-width='0.6' stroke-linecap='round' opacity='0.7'/%3E%3Cline x1='90' y1='50' x2='87' y2='60' stroke='white' stroke-width='0.6' stroke-linecap='round' opacity='0.7'/%3E%3Cline x1='15' y1='70' x2='12' y2='80' stroke='white' stroke-width='0.6' stroke-linecap='round' opacity='0.7'/%3E%3Cline x1='65' y1='80' x2='62' y2='90' stroke='white' stroke-width='0.6' stroke-linecap='round' opacity='0.7'/%3E%3C/svg%3E");
+  animation: rain-fall-left var(--rain-animation-duration-1, 1.5s) linear infinite;
+  animation-delay: 0s;
+  top: 0;
+}
+
+.rain-layer-2 {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cline x1='15' y1='5' x2='14' y2='15' stroke='white' stroke-width='0.55' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='55' y1='8' x2='54' y2='18' stroke='white' stroke-width='0.55' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='95' y1='5' x2='94' y2='15' stroke='white' stroke-width='0.55' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='25' y1='30' x2='24' y2='40' stroke='white' stroke-width='0.55' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='65' y1='25' x2='64' y2='35' stroke='white' stroke-width='0.55' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='105' y1='20' x2='104' y2='30' stroke='white' stroke-width='0.55' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='30' y1='55' x2='29' y2='65' stroke='white' stroke-width='0.55' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='70' y1='50' x2='69' y2='60' stroke='white' stroke-width='0.55' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='20' y1='70' x2='19' y2='80' stroke='white' stroke-width='0.55' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='60' y1='65' x2='59' y2='75' stroke='white' stroke-width='0.55' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='95' y1='95' x2='94' y2='105' stroke='white' stroke-width='0.55' stroke-linecap='round' opacity='0.65'/%3E%3C/svg%3E");
+  animation: rain-fall-slight-left var(--rain-animation-duration-2, 1.7s) linear infinite;
+  animation-delay: calc(var(--rain-animation-duration-2, 1.7s) * -0.25);
+  top: -25%;
+}
+
+.rain-layer-3 {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Cline x1='10' y1='8' x2='10' y2='18' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='40' y1='5' x2='40' y2='15' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='70' y1='7' x2='70' y2='17' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='100' y1='5' x2='100' y2='15' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='130' y1='8' x2='130' y2='18' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='20' y1='25' x2='20' y2='35' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='50' y1='28' x2='50' y2='38' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='80' y1='30' x2='80' y2='40' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='110' y1='32' x2='110' y2='42' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='30' y1='45' x2='30' y2='55' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='60' y1='48' x2='60' y2='58' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='90' y1='50' x2='90' y2='60' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='120' y1='52' x2='120' y2='62' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3C/svg%3E");
+  animation: rain-fall-straight var(--rain-animation-duration-3, 2s) linear infinite;
+  animation-delay: calc(var(--rain-animation-duration-3, 2s) * -0.5);
+  top: -50%;
+}
+
+.rain-layer-4 {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cline x1='12' y1='10' x2='13' y2='20' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='44' y1='12' x2='45' y2='22' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='76' y1='15' x2='77' y2='25' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='108' y1='5' x2='109' y2='15' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='140' y1='8' x2='141' y2='18' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='172' y1='10' x2='173' y2='20' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='20' y1='25' x2='21' y2='35' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='52' y1='28' x2='53' y2='38' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='84' y1='30' x2='85' y2='40' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='116' y1='32' x2='117' y2='42' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='148' y1='35' x2='149' y2='45' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='28' y1='45' x2='29' y2='55' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='60' y1='48' x2='61' y2='58' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='92' y1='50' x2='93' y2='60' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='124' y1='52' x2='125' y2='62' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3Cline x1='156' y1='55' x2='157' y2='65' stroke='white' stroke-width='0.45' stroke-linecap='round' opacity='0.55'/%3E%3C/svg%3E");
+  animation: rain-fall-slight-right var(--rain-animation-duration-4, 2.3s) linear infinite;
+  animation-delay: calc(var(--rain-animation-duration-4, 2.3s) * -0.75);
+  top: -75%;
+}
+
+/* Add duplicate layers with different positions and angles for continuous coverage */
+.rain-container::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: -100%;
+  left: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='130' viewBox='0 0 130 130'%3E%3Cline x1='25' y1='10' x2='28' y2='20' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='65' y1='15' x2='68' y2='25' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='105' y1='8' x2='108' y2='18' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='15' y1='35' x2='18' y2='45' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='55' y1='30' x2='58' y2='40' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='95' y1='25' x2='98' y2='35' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='35' y1='50' x2='38' y2='60' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='75' y1='55' x2='78' y2='65' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='115' y1='60' x2='118' y2='70' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='25' y1='75' x2='28' y2='85' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='65' y1='80' x2='68' y2='90' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3Cline x1='105' y1='85' x2='108' y2='95' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.65'/%3E%3C/svg%3E");
+  opacity: calc(var(--rain-opacity, 0.5) * 1);
+  animation: rain-fall-right var(--rain-animation-duration-3, 2s) linear infinite;
+  z-index: 25;
+}
+
+.rain-container::after {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: -33%;
+  left: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140' viewBox='0 0 140 140'%3E%3Cline x1='15' y1='10' x2='13' y2='20' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='45' y1='5' x2='43  stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='45' y1='5' x2='43' y2='15' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='75' y1='12' x2='73' y2='22' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='105' y1='8' x2='103' y2='18' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='135' y1='15' x2='133' y2='25' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='25' y1='30' x2='23' y2='40' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='55' y1='35' x2='53' y2='45' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='85' y1='25' x2='  stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='85' y1='25' x2='83' y2='35' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='115' y1='32' x2='113' y2='42' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='35' y1='50' x2='33' y2='60' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='65' y1='55' x2='63' y2='65' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='95' y1='45' x2='93' y2='55' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3Cline x1='125' y1='52' x2='123' y2='62' stroke='white' stroke-width='0.5' stroke-linecap='round' opacity='0.6'/%3E%3C/svg%3E");
+  opacity: calc(var(--rain-opacity, 0.5) * 1);
+  animation: rain-fall-slight-left var(--rain-animation-duration-2, 1.7s) linear infinite;
+  animation-delay: calc(var(--rain-animation-duration-2, 1.7s) * -0.33);
+  z-index: 25;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
