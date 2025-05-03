@@ -63,7 +63,7 @@ export function SplashControls({ onSettingsChange, initialSettings, className }:
 
   return (
     <div
-      className={`absolute top-2 right-2 z-50 bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-xs w-64 ${className}`}
+      className={`bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-xs w-64 ${className || ''}`}
     >
       <h3 className="font-medium mb-2">Splash Controls</h3>
 

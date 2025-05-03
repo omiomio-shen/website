@@ -7,6 +7,7 @@ import { useState, useEffect } from "react"
 interface RainControlsProps {
   onSettingsChange: (settings: RainSettings) => void
   initialSettings?: RainSettings
+  className?: string
 }
 
 export interface RainSettings {
@@ -15,7 +16,7 @@ export interface RainSettings {
   animationDuration: number
 }
 
-export function RainControls({ onSettingsChange, initialSettings }: RainControlsProps) {
+export function RainControls({ onSettingsChange, initialSettings, className }: RainControlsProps) {
   const [settings, setSettings] = useState<RainSettings>(
     initialSettings || {
       density: 50,
@@ -57,7 +58,7 @@ export function RainControls({ onSettingsChange, initialSettings }: RainControls
   }
 
   return (
-    <div className="absolute top-2 right-2 z-50 bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-xs w-64">
+    <div className={`bg-black/50 backdrop-blur-sm p-3 rounded-lg text-white text-xs w-64 ${className || ''}`}>
       <h3 className="font-medium mb-2">Rain Controls</h3>
 
       <div className="mb-2">

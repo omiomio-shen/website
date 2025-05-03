@@ -140,7 +140,7 @@ export default function Home() {
     >
       {/* Controls toggle buttons - only visible when secret key is typed */}
       {showControls && (
-        <div className="absolute top-2 left-2 z-50 flex gap-2 flex-wrap">
+        <div className="absolute top-2 right-2 z-50 flex flex-col gap-2">
           <button
             onClick={() => {
               setShowRainControls(!showRainControls)
@@ -165,14 +165,20 @@ export default function Home() {
       )}
 
       {/* Rain Controls */}
-      {showControls && showRainControls && <RainControls onSettingsChange={setRainSettings} initialSettings={rainSettings} />}
+      {showControls && showRainControls && (
+        <RainControls 
+          onSettingsChange={setRainSettings} 
+          initialSettings={rainSettings}
+          className="absolute top-20 right-2 z-50"
+        />
+      )}
 
       {/* Splash Controls */}
       {showControls && showSplashControls && (
         <SplashControls
           onSettingsChange={setSplashSettings}
           initialSettings={splashSettings}
-          className="top-2 right-2 translate-y-0"
+          className="absolute top-20 right-2 z-50"
         />
       )}
 
@@ -210,10 +216,10 @@ export default function Home() {
           <div className="relative">
             {/* Top half of text - visible when top section is hovered */}
             <h1
-              className="text-8xl font-semibold transition-all duration-300 font-sans"
+              className="text-8xl font-semibold transition-colors duration-200 font-sans"
               style={{
                 position: "absolute",
-                color: "rgba(255, 255, 255, 0.8)",
+                color: hoverSection === "top" ? "rgba(255, 255, 255, 0.8)" : "rgb(209, 213, 219)",
                 clipPath: `polygon(0 0, 100% 0, 100% 50%, 0 50%)`,
                 filter: hoverSection === "top" ? "blur(0)" : "blur(2px) grayscale(60%)",
                 opacity: hoverSection === "top" ? 1 : 0.8,
@@ -225,10 +231,10 @@ export default function Home() {
 
             {/* Bottom half of text - visible when bottom section is hovered */}
             <h1
-              className="text-8xl font-semibold transition-all duration-300 font-sans"
+              className="text-8xl font-semibold transition-colors duration-200 font-sans"
               style={{
                 position: "absolute",
-                color: "rgba(255, 255, 255, 0.8)",
+                color: hoverSection === "bottom" ? "rgba(255, 255, 255, 0.8)" : "rgb(209, 213, 219)",
                 clipPath: `polygon(0 50%, 100% 50%, 100% 100%, 0 100%)`,
                 filter: hoverSection === "bottom" ? "blur(0)" : "blur(2px) grayscale(60%)",
                 opacity: hoverSection === "bottom" ? 1 : 0.8,
@@ -248,7 +254,7 @@ export default function Home() {
         {/* Navigation buttons */}
         {/* Product at Centrl - visible when hovering top section */}
         <div
-          className={`absolute transition-opacity duration-300 ${hoverSection === "top" ? "opacity-100" : "opacity-0"}`}
+          className={`absolute transition-opacity duration-200 ${hoverSection === "top" ? "opacity-100" : "opacity-0"}`}
           style={{
             left: navLeftPosition,
             top: "43.5%",
@@ -262,10 +268,10 @@ export default function Home() {
 
         {/* Oil paintings - visible when hovering bottom section */}
         <div
-          className={`absolute transition-opacity duration-300 ${hoverSection === "bottom" ? "opacity-100" : "opacity-0"}`}
+          className={`absolute transition-opacity duration-200 ${hoverSection === "bottom" ? "opacity-100" : "opacity-0"}`}
           style={{
             left: navLeftPosition,
-            top: "63.5%",
+            top: "66.5%",
             transform: "translateY(-50%)",
           }}
         >
@@ -322,7 +328,7 @@ export default function Home() {
 
       {/* Rain animation layers - only visible when hovering top section */}
       <div
-        className={`absolute top-0 left-0 w-full overflow-hidden pointer-events-none transition-opacity duration-300 ${
+        className={`absolute top-0 left-0 w-full overflow-hidden pointer-events-none transition-opacity duration-200 ${
           hoverSection === "top" ? "opacity-100" : "opacity-0"
         }`}
         style={{ height: splitPosition }}
@@ -337,7 +343,7 @@ export default function Home() {
 
       {/* Water splash animation - only visible when hovering bottom section */}
       <div
-        className={`absolute left-0 w-full overflow-hidden pointer-events-none transition-opacity duration-300 ${
+        className={`absolute left-0 w-full overflow-hidden pointer-events-none transition-opacity duration-200 ${
           hoverSection === "bottom" ? "opacity-100" : "opacity-0"
         }`}
         style={{ top: splitPosition, height: `calc(100% - ${splitPosition})` }}
@@ -348,12 +354,12 @@ export default function Home() {
       {/* Attribution and branding */}
       <div className="absolute bottom-0 left-0 w-full z-30 p-6 flex justify-between items-center">
         {/* Left side - Branding */}
-        <div className="text-white/80 text-xs font-light tracking-wide">
+        <div className="text-white/70 text-[11px] font-light tracking-wide">
           Mia&apos;s little corner on the internet. Made with 💜 from San Francisco.
         </div>
 
         {/* Right side - Image attribution */}
-        <div className="text-white/80 text-xs font-light tracking-wide">
+        <div className="text-white/70 text-[11px] font-light tracking-wide">
           A stranger in{" "}
           <Link
             href="https://www.google.com/maps/place/Shinjuku+Gyoen+National+Garden/@35.6851763,139.7074768,17z/data=!3m1!4b1!4m6!3m5!1s0x60188cc21b93233f:0x6a1eb1b5a117f287!8m2!3d35.6851763!4d139.7100517!16zL20vMDdkM24x?entry=ttu&g_ep=EgoyMDI1MDQyOS4wIKXMDSoASAFQAw%3D%3D"

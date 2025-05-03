@@ -1,27 +1,19 @@
-import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 import "./globals.css"
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-})
 
 export const metadata: Metadata = {
   title: "Mia's Corner of the Internet",
-  description: "Welcome to my personal website",
-    generator: 'v0.dev'
+  description: "A personal website by Mia Shen",
 }
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html lang="en">
-      <body className={inter.variable}>{children}</body>
+      <body>{children}</body>
     </html>
   )
 }
