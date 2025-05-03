@@ -1,20 +1,22 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Inter } from "next/font/google"
-import { RainControls, type RainSettings } from "@/components/rain-controls"
-import { WaterSplash } from "@/components/water-splash"
-import { SplashControls, type SplashSettings } from "@/components/splash-controls"
+import { Settings } from "lucide-react"
 import { NavButton } from "@/components/nav-button"
-import { PositionControls, type PositionSettings } from "@/components/position-controls"
-
-const inter = Inter({ subsets: ["latin"] })
+import { WaterSplash } from "@/components/water-splash"
+import { RainControls, type RainSettings } from "@/components/rain-controls"
+import { SplashControls, type SplashSettings } from "@/components/splash-controls"
 
 export default function Home() {
+  const [hoverSection, setHoverSection] = useState<string>("none")
+  const [bottomHeight, setBottomHeight] = useState(0)
+  const [showControls, setShowControls] = useState(false)
+  const [typedText, setTypedText] = useState("")
+  const navLeftPosition = "108px" // Control both navigation buttons' horizontal position
+
   const [rainSettings, setRainSettings] = useState<RainSettings>({
     density: 35,
     containerHeight: 100,
@@ -24,23 +26,13 @@ export default function Home() {
   const [splashSettings, setSplashSettings] = useState<SplashSettings>({
     density: 50,
     coverage: 100,
-    animationDuration: 1.4,
+    animationDuration: 3,
     dropletSize: 0.5,
     rippleRoundness: 25,
   })
 
-  const [positionSettings, setPositionSettings] = useState<PositionSettings>({
-    productLeftPosition: 9.5,
-    productTopPosition: 40,
-    oilLeftPosition: 9.5,
-    oilTopPosition: 70,
-  })
-
-  const [hoverSection, setHoverSection] = useState<string>("none")
-  const [bottomHeight, setBottomHeight] = useState(0)
   const [showRainControls, setShowRainControls] = useState(false)
   const [showSplashControls, setShowSplashControls] = useState(false)
-  const [showPositionControls, setShowPositionControls] = useState(false)
 
   // Refs for the hover detection areas
   const topSectionRef = useRef<HTMLDivElement>(null)
@@ -48,6 +40,22 @@ export default function Home() {
 
   // Split position at 55% from the top
   const splitPosition = "55%"
+
+  // Secret key handler
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      const newText = typedText + e.key
+      setTypedText(newText.slice(-5)) // Keep only last 5 characters
+
+      if (newText.slice(-5) === "cutie") {
+        setShowControls(prev => !prev)
+        setTypedText("")
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyPress)
+    return () => window.removeEventListener("keydown", handleKeyPress)
+  }, [typedText])
 
   // Calculate the height of the bottom section for water splash effect
   useEffect(() => {
@@ -127,36 +135,40 @@ export default function Home() {
 
   return (
     <main
-      className={`flex min-h-screen flex-col items-center justify-center ${inter.className}`}
+      className="flex min-h-screen flex-col items-center justify-center"
       style={{ backgroundColor: "#0C0F0E", ...rainStyles }}
     >
-      {/* Controls toggle buttons */}
-      <div className="absolute top-2 left-2 z-50 flex gap-2 flex-wrap">
-        <button
-          onClick={() => setShowRainControls(!showRainControls)}
-          className="bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg text-white text-xs hover:bg-black/70 transition-colors"
-        >
-          {showRainControls ? "Hide Rain Controls" : "Show Rain Controls"}
-        </button>
-        <button
-          onClick={() => setShowSplashControls(!showSplashControls)}
-          className="bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg text-white text-xs hover:bg-black/70 transition-colors"
-        >
-          {showSplashControls ? "Hide Splash Controls" : "Show Splash Controls"}
-        </button>
-        <button
-          onClick={() => setShowPositionControls(!showPositionControls)}
-          className="bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg text-white text-xs hover:bg-black/70 transition-colors mt-1"
-        >
-          {showPositionControls ? "Hide Position Controls" : "Show Position Controls"}
-        </button>
-      </div>
+      {/* Controls toggle buttons - only visible when secret key is typed */}
+      {showControls && (
+        <div className="absolute top-2 left-2 z-50 flex gap-2 flex-wrap">
+          <button
+            onClick={() => {
+              setShowRainControls(!showRainControls)
+              setShowSplashControls(false)
+            }}
+            className="bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg text-white text-xs hover:bg-black/70 transition-colors flex items-center gap-1"
+          >
+            <Settings className="w-3 h-3" />
+            Rain
+          </button>
+          <button
+            onClick={() => {
+              setShowSplashControls(!showSplashControls)
+              setShowRainControls(false)
+            }}
+            className="bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-lg text-white text-xs hover:bg-black/70 transition-colors flex items-center gap-1"
+          >
+            <Settings className="w-3 h-3" />
+            Splash
+          </button>
+        </div>
+      )}
 
       {/* Rain Controls */}
-      {showRainControls && <RainControls onSettingsChange={setRainSettings} initialSettings={rainSettings} />}
+      {showControls && showRainControls && <RainControls onSettingsChange={setRainSettings} initialSettings={rainSettings} />}
 
       {/* Splash Controls */}
-      {showSplashControls && (
+      {showControls && showSplashControls && (
         <SplashControls
           onSettingsChange={setSplashSettings}
           initialSettings={splashSettings}
@@ -164,12 +176,7 @@ export default function Home() {
         />
       )}
 
-      {/* Position Controls */}
-      {showPositionControls && (
-        <PositionControls onPositionChange={setPositionSettings} initialPositions={positionSettings} />
-      )}
-
-      {/* Hover detection areas - these are now just for visual reference, not for event handling */}
+      {/* Hover detection areas */}
       <div
         ref={topSectionRef}
         className="absolute top-0 left-0 w-full z-20 pointer-events-none"
@@ -193,63 +200,63 @@ export default function Home() {
         }}
       />
 
-      {/* "Mia" heading with split effect */}
-      <div
-        className="absolute z-30 pointer-events-none"
-        style={{ left: `${positionSettings.productLeftPosition}%`, top: splitPosition, transform: "translateY(-50%)" }}
-      >
-        {/* Container to help with positioning */}
-        <div className="relative">
-          {/* Top half of text - visible when top section is hovered */}
-          <h1
-            className="text-8xl font-semibold tracking-wider transition-all duration-300"
-            style={{
-              position: "absolute",
-              color: "rgba(255, 255, 255, 0.8)",
-              clipPath: `polygon(0 0, 100% 0, 100% 50%, 0 50%)`,
-              filter: hoverSection === "top" ? "blur(0)" : "blur(2px) grayscale(60%)",
-              opacity: hoverSection === "top" ? 1 : 0.8,
-              textShadow: "0 0 20px rgba(0,0,0,0.3)",
-            }}
-          >
-            Mia
-          </h1>
+      {/* Text container for all text elements */}
+      <div className="absolute inset-0 z-30 pointer-events-none">
+        {/* "Mia" heading with split effect */}
+        <div
+          className="absolute"
+          style={{ left: "100px", top: splitPosition, transform: "translateY(-50%)" }}
+        >
+          <div className="relative">
+            {/* Top half of text - visible when top section is hovered */}
+            <h1
+              className="text-8xl font-semibold transition-all duration-300 font-sans"
+              style={{
+                position: "absolute",
+                color: "rgba(255, 255, 255, 0.8)",
+                clipPath: `polygon(0 0, 100% 0, 100% 50%, 0 50%)`,
+                filter: hoverSection === "top" ? "blur(0)" : "blur(2px) grayscale(60%)",
+                opacity: hoverSection === "top" ? 1 : 0.8,
+                textShadow: "0 0 20px rgba(0,0,0,0.3)",
+              }}
+            >
+              Mia
+            </h1>
 
-          {/* Bottom half of text - visible when bottom section is hovered */}
-          <h1
-            className="text-8xl font-semibold tracking-wider transition-all duration-300"
-            style={{
-              position: "absolute",
-              color: "rgba(255, 255, 255, 0.8)",
-              clipPath: `polygon(0 50%, 100% 50%, 100% 100%, 0 100%)`,
-              filter: hoverSection === "bottom" ? "blur(0)" : "blur(2px) grayscale(60%)",
-              opacity: hoverSection === "bottom" ? 1 : 0.8,
-              textShadow: "0 0 20px rgba(0,0,0,0.3)",
-            }}
-          >
-            Mia
-          </h1>
+            {/* Bottom half of text - visible when bottom section is hovered */}
+            <h1
+              className="text-8xl font-semibold transition-all duration-300 font-sans"
+              style={{
+                position: "absolute",
+                color: "rgba(255, 255, 255, 0.8)",
+                clipPath: `polygon(0 50%, 100% 50%, 100% 100%, 0 100%)`,
+                filter: hoverSection === "bottom" ? "blur(0)" : "blur(2px) grayscale(60%)",
+                opacity: hoverSection === "bottom" ? 1 : 0.8,
+                textShadow: "0 0 20px rgba(0,0,0,0.3)",
+              }}
+            >
+              Mia
+            </h1>
 
-          {/* Base text (always visible) for proper sizing and spacing */}
-          <h1 className="text-8xl font-semibold tracking-wider invisible" aria-hidden="true">
-            Mia
-          </h1>
+            {/* Base text (always visible) for proper sizing and spacing */}
+            <h1 className="text-8xl font-semibold invisible" aria-hidden="true">
+              Mia
+            </h1>
+          </div>
         </div>
-      </div>
 
-      {/* Navigation buttons - now in a separate layer with their own z-index */}
-      <div className="absolute inset-0 z-40 pointer-events-none">
+        {/* Navigation buttons */}
         {/* Product at Centrl - visible when hovering top section */}
         <div
           className={`absolute transition-opacity duration-300 ${hoverSection === "top" ? "opacity-100" : "opacity-0"}`}
           style={{
-            left: `${positionSettings.productLeftPosition}%`,
-            top: `${positionSettings.productTopPosition}%`,
+            left: navLeftPosition,
+            top: "43.5%",
             transform: "translateY(-50%)",
           }}
         >
           <div id="top-nav-button" className="pointer-events-auto">
-            <NavButton>Product at Centrl</NavButton>
+            <NavButton className="text-left">Product at Centrl</NavButton>
           </div>
         </div>
 
@@ -257,13 +264,13 @@ export default function Home() {
         <div
           className={`absolute transition-opacity duration-300 ${hoverSection === "bottom" ? "opacity-100" : "opacity-0"}`}
           style={{
-            left: `${positionSettings.oilLeftPosition}%`,
-            top: `${positionSettings.oilTopPosition}%`,
+            left: navLeftPosition,
+            top: "63.5%",
             transform: "translateY(-50%)",
           }}
         >
           <div id="bottom-nav-button" className="pointer-events-auto">
-            <NavButton>Oil paintings</NavButton>
+            <NavButton className="text-left">Oil paintings</NavButton>
           </div>
         </div>
       </div>
@@ -273,7 +280,7 @@ export default function Home() {
         {/* Blurred background image with grayscale */}
         <div className="absolute inset-0 transition-all duration-300">
           <Image
-            src="/images/bridge.png"
+            src="/images/bridge.jpeg"
             alt="Blurred bridge"
             fill
             style={{
@@ -284,7 +291,7 @@ export default function Home() {
           />
         </div>
 
-        {/* Clear image for top section - with opacity transition instead of clip-path animation */}
+        {/* Clear image for top section */}
         <div
           className="absolute inset-0 transition-opacity duration-300"
           style={{
@@ -292,10 +299,10 @@ export default function Home() {
             clipPath: `polygon(0 0, 100% 0, 100% ${splitPosition}, 0 ${splitPosition})`,
           }}
         >
-          <Image src="/images/bridge.png" alt="Clear bridge top section" fill style={{ objectFit: "cover" }} priority />
+          <Image src="/images/bridge.jpeg" alt="Clear bridge top section" fill style={{ objectFit: "cover" }} priority />
         </div>
 
-        {/* Clear image for bottom section - with opacity transition instead of clip-path animation */}
+        {/* Clear image for bottom section */}
         <div
           className="absolute inset-0 transition-opacity duration-300"
           style={{
@@ -304,7 +311,7 @@ export default function Home() {
           }}
         >
           <Image
-            src="/images/bridge.png"
+            src="/images/bridge.jpeg"
             alt="Clear bridge bottom section"
             fill
             style={{ objectFit: "cover" }}
@@ -341,7 +348,9 @@ export default function Home() {
       {/* Attribution and branding */}
       <div className="absolute bottom-0 left-0 w-full z-30 p-6 flex justify-between items-center">
         {/* Left side - Branding */}
-        <div className="text-white/80 text-xs font-light tracking-wide">Mia&apos;s little corner on the internet.</div>
+        <div className="text-white/80 text-xs font-light tracking-wide">
+          Mia&apos;s little corner on the internet. Made with 💜 from San Francisco.
+        </div>
 
         {/* Right side - Image attribution */}
         <div className="text-white/80 text-xs font-light tracking-wide">

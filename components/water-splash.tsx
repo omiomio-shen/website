@@ -137,8 +137,11 @@ export function WaterSplash({ visible, containerHeight, settings }: WaterSplashP
             transform: translate(-50%, -50%) scale(0);
             opacity: 0.85;
           }
-          70% {
-            opacity: 0.65;
+          50% {
+            opacity: 0.75;
+          }
+          80% {
+            opacity: 0.45;
           }
           100% {
             transform: translate(-50%, -50%) scale(1);

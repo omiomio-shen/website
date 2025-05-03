@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { ArrowRight } from "lucide-react"
 
 interface NavButtonProps {
   children: ReactNode
@@ -12,14 +13,13 @@ export function NavButton({ children, className = "", onClick }: NavButtonProps)
   return (
     <button
       onClick={onClick}
-      className={`group relative flex items-center text-lg text-white
-      transition-all 
-      hover:text-white
-      active:transform active:scale-[0.98]
-      focus:outline-none ${className}`}
+      className={`group relative flex items-center text-lg text-gray-300
+      hover:text-white focus:outline-none ${className}`}
     >
-      <span>{children}</span>
-      <span className="ml-1.5 opacity-0 group-hover:opacity-100">→</span>
+      <span className="inline-block">{children}</span>
+      <ArrowRight 
+        className="ml-1 h-4 w-4 hidden group-hover:block text-gray-300 group-hover:text-white" 
+      />
     </button>
   )
 }
