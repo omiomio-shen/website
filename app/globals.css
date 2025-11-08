@@ -277,3 +277,14 @@ body {
   margin: 0;
   padding: 0;
 }
+
+/* Artwork Gallery Styles */
+.group-hover\:scale-120:hover {
+  transform: scale(1.2);
+}
+
+.artwork-shadow {
+  box-shadow: 
+    0 4px 15px -3px rgba(0, 0, 0, 0.5),
+    0 8px 20px -5px rgba(0, 0, 0, 0.3);
+}

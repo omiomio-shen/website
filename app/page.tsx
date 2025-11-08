@@ -276,7 +276,7 @@ export default function Home() {
           }}
         >
           <div id="bottom-nav-button" className="pointer-events-auto">
-            <NavButton className="text-left">Oil paintings</NavButton>
+            <NavButton href="/oil-paintings" className="text-left">Oil paintings</NavButton>
           </div>
         </div>
       </div>

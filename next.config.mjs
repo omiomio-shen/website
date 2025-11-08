@@ -7,7 +7,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    domains: ['v0.blob.com'],
+    domains: ['v0.blob.com', 'images.unsplash.com'],
     unoptimized: true,
   },
 };
