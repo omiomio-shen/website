@@ -57,7 +57,7 @@ const artworks = [
     id: 9,
     url: '/images/painting_9.jpg',
     title: 'Azure Dreams',
-    emotions: ['Comforting', 'Calm'],
+    emotions: ['Relaxed', 'Connected'],
   },
   {
     id: 10,
