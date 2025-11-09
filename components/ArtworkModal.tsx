@@ -134,9 +134,6 @@ export function ArtworkModal({
         <div className="flex flex-col items-center gap-3">
           <p
             className="text-gray-600 text-sm"
-            style={{
-              fontFamily: 'Inter, sans-serif',
-            }}
           >
             What emotions do you feel?
           </p>
@@ -149,9 +146,6 @@ export function ArtworkModal({
                   key={index}
                   onClick={() => handleEmotionClick(emotion)}
                   className={`relative px-4 py-1.5 rounded-full text-sm transition-all ${isSelected ? 'bg-[#7a9b7a] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
-                  style={{
-                    fontFamily: 'Inter, sans-serif',
-                  }}
                 >
                   {emotion}
                   <span

@@ -98,11 +98,7 @@ export function ArtworkGallery() {
                   setActiveNav(item)
                 }
               }}
-              className="relative text-gray-600 hover:text-gray-900 transition-colors py-2"
-              style={{
-                fontFamily: 'Inter, sans-serif',
-                fontSize: '1.125rem',
-              }}
+              className="relative text-gray-600 hover:text-gray-900 transition-colors py-2 text-sm"
             >
               {item}
               {activeNav === item && (
@@ -116,12 +112,7 @@ export function ArtworkGallery() {
       {/* Hero Section */}
       <div className="max-w-6xl mx-auto mb-16 text-center py-12">
         <h1
-          className="font-bold text-gray-900"
-          style={{
-            fontFamily: 'Inter, sans-serif',
-            fontSize: '4rem',
-            lineHeight: '1.1',
-          }}
+          className="font-bold text-gray-900 text-6xl leading-tight"
         >
           Oil Paintings
         </h1>
