@@ -108,7 +108,7 @@ export function ArtworkModal({
       </button>
 
       {/* Artwork Image - Maximized */}
-      <div className="w-full h-full flex items-center justify-center px-16 sm:px-20 py-16 pb-40">
+      <div className="w-full h-full flex items-center justify-center px-2 sm:px-4 pt-4 sm:pt-6 pb-24 sm:pb-28">
         <div className="relative w-full h-full max-w-full max-h-full">
           <Image
             src={artworks[currentIndex].url}
@@ -149,7 +149,7 @@ export function ArtworkModal({
                 >
                   {emotion}
                   <span
-                    className={`absolute -top-1 -right-1 text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center transition-all ${isSelected ? 'bg-gray-900' : 'bg-gray-700'}`}
+                    className={`absolute -top-1 -right-1 text-white text-xs font-normal rounded-full w-5 h-5 flex items-center justify-center transition-all font-['Inter',sans-serif] ${isSelected ? 'bg-[#1d331d]' : 'bg-gray-600'}`}
                   >
                     {count}
                   </span>
