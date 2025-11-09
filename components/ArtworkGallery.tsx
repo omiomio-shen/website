@@ -77,6 +77,30 @@ const artworks = [
     title: 'Ethereal Mist',
     emotions: ['Serene', 'Mystery'],
   },
+  {
+    id: 13,
+    url: '/images/painting_13.jpg',
+    title: 'Twilight Serenade',
+    emotions: ['Melancholy', 'Beauty'],
+  },
+  {
+    id: 14,
+    url: '/images/painting_14.jpg',
+    title: 'Verdant Path',
+    emotions: ['Growth', 'Harmony'],
+  },
+  {
+    id: 15,
+    url: '/images/painting_15.jpg',
+    title: 'Crimson Tide',
+    emotions: ['Passion', 'Intensity'],
+  },
+  {
+    id: 16,
+    url: '/images/painting_16.jpg',
+    title: 'Starlight Canvas',
+    emotions: ['Wonder', 'Transcendence'],
+  },
 ]
 
 export function ArtworkGallery() {
