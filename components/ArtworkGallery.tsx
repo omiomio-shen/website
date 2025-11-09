@@ -98,11 +98,13 @@ export function ArtworkGallery() {
                   setActiveNav(item)
                 }
               }}
-              className="relative text-gray-600 hover:text-gray-900 transition-colors py-2 text-sm"
+              className={`relative transition-colors py-2 text-sm ${
+                activeNav === item ? 'text-gray-900' : 'text-gray-500 hover:text-gray-900'
+              }`}
             >
               {item}
               {activeNav === item && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900" />
+                <div className="absolute bottom-[0.0625rem] left-0 right-0 h-px bg-gray-900" />
               )}
             </button>
           ))}
