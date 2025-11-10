@@ -309,7 +309,7 @@ export function ArtworkModal({
   }, [saveCurrentState])
 
   return (
-    <div className="fixed inset-0 bg-[#f8f8f6] bg-opacity-95 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-[#f8f8f6] z-50 flex items-center justify-center">
       {/* Close Button */}
       <button
         onClick={onClose}
