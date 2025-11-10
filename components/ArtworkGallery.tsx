@@ -4,6 +4,24 @@ import React, { useState } from 'react'
 import { ArtworkModal } from './ArtworkModal'
 import Image from 'next/image'
 
+// Helper function to convert image URL to thumbnail version
+function getThumbnailUrl(url: string): string {
+  // Extract the base name and extension
+  const lastSlash = url.lastIndexOf('/')
+  const filename = url.substring(lastSlash + 1)
+  const lastDot = filename.lastIndexOf('.')
+  const baseName = filename.substring(0, lastDot)
+  const extension = filename.substring(lastDot)
+  
+  // Special case: painting_1.jpg uses .jpeg extension for thumbnail
+  if (baseName === 'painting_1' && extension === '.jpg') {
+    return url.substring(0, lastSlash + 1) + baseName + '_thumbnail.jpeg'
+  }
+  
+  // Insert "_thumbnail" before the extension
+  return url.substring(0, lastSlash + 1) + baseName + '_thumbnail' + extension
+}
+
 const artworks = [
   {
     id: 1,
@@ -153,7 +171,7 @@ export function ArtworkGallery() {
             className="relative w-full aspect-square rounded-full overflow-hidden cursor-pointer group artwork-shadow scale-90"
           >
             <Image
-              src={artwork.url}
+              src={getThumbnailUrl(artwork.url)}
               alt={`Artwork ${artwork.id}`}
               fill
               className="object-cover transition-transform duration-500 group-hover:scale-120"
