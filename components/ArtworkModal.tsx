@@ -54,14 +54,17 @@ export function ArtworkModal({
       const data = await response.json()
       const counts = data.counts || {}
       
-      // Apply any pending session changes to the fetched counts
+      // Get the latest session state (may have been updated during fetch)
       const sessionState = sessionStateRef.current.get(paintingId)
       if (sessionState) {
+        // Apply any pending session changes to the fetched counts
         Object.entries(sessionState.pendingChanges).forEach(([emotion, delta]) => {
           counts[emotion] = (counts[emotion] || 0) + delta
         })
       }
       
+      // Update counts - pending changes are already applied above
+      // We read sessionState right before applying, so it should have the latest changes
       setEmotionCounts(counts)
     } catch (error) {
       console.error('Error fetching emotion counts:', error)
@@ -87,32 +90,46 @@ export function ArtworkModal({
       if (!response.ok) {
         return
       }
-      const data = await response.json()
+      const data = await response.json() as { hasSubmitted: boolean; previousEmotions?: string[] }
       hasCheckedSubmissionRef.current.set(paintingId, true)
 
       if (data.hasSubmitted && data.previousEmotions) {
         // Restore previous selections
-        const previousSet = new Set(data.previousEmotions)
-        baseEmotionsRef.current.set(paintingId, new Set(previousSet))
+        const previousSet = new Set<string>(data.previousEmotions)
+        baseEmotionsRef.current.set(paintingId, new Set<string>(previousSet))
         
-        // Restore session state
+        // Restore session state, preserving any existing pending changes and current selections
+        const existingState = sessionStateRef.current.get(paintingId)
+        // Merge previous emotions with any currently selected emotions (from current session)
+        const mergedSelections = new Set<string>(previousSet)
+        if (existingState?.selectedEmotions) {
+          existingState.selectedEmotions.forEach(emotion => mergedSelections.add(emotion))
+        }
+        
         const sessionState: SessionState = {
-          selectedEmotions: previousSet,
-          pendingChanges: {}
+          selectedEmotions: mergedSelections,
+          pendingChanges: existingState?.pendingChanges || {}
         }
         sessionStateRef.current.set(paintingId, sessionState)
         
-        // Update UI state
-        setSelectedEmotions(previousSet)
+        // Update UI state with merged selections
+        setSelectedEmotions(mergedSelections)
+        
+        // Note: pending changes are already applied by fetchEmotionCounts, so no need to re-apply here
       } else {
         // No previous submission, start fresh
         baseEmotionsRef.current.set(paintingId, new Set())
-        const sessionState = sessionStateRef.current.get(paintingId) || {
-          selectedEmotions: new Set(),
-          pendingChanges: {}
+        const existingState = sessionStateRef.current.get(paintingId)
+        // Preserve any current selections from this session
+        const currentSelections = existingState?.selectedEmotions || new Set<string>()
+        const sessionState: SessionState = {
+          selectedEmotions: currentSelections,
+          pendingChanges: existingState?.pendingChanges || {}
         }
         sessionStateRef.current.set(paintingId, sessionState)
-        setSelectedEmotions(new Set())
+        setSelectedEmotions(currentSelections)
+        
+        // Note: pending changes are already applied by fetchEmotionCounts, so no need to re-apply here
       }
     } catch (error) {
       console.error('Error checking submission:', error)
@@ -187,6 +204,10 @@ export function ArtworkModal({
 
       // Update base emotions to current state
       baseEmotionsRef.current.set(paintingId, new Set(selectedEmotions))
+      
+      // Clear pending changes since they've been saved to the database
+      sessionState.pendingChanges = {}
+      sessionStateRef.current.set(paintingId, sessionState)
     }
   }, [selectedEmotions])
 
@@ -254,6 +275,8 @@ export function ArtworkModal({
 
     // Update session state
     sessionState.selectedEmotions = newSelected
+    // Track pending changes so fetchEmotionCounts can apply them
+    sessionState.pendingChanges[emotion] = (sessionState.pendingChanges[emotion] || 0) + delta
     sessionStateRef.current.set(currentPaintingId, sessionState)
 
     // Update local counts for display
@@ -346,11 +369,13 @@ export function ArtworkModal({
                   className={`relative px-4 py-1.5 rounded-full text-sm transition-all ${isSelected ? 'bg-[#7a9b7a] text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
                 >
                   {emotion}
-                  <span
-                    className={`absolute -top-1 -right-1 text-white text-xs font-normal rounded-full w-5 h-5 flex items-center justify-center transition-all font-['Inter',sans-serif] ${isSelected ? 'bg-[#1d331d]' : 'bg-gray-600'}`}
-                  >
-                    {count}
-                  </span>
+                  {count > 0 && (
+                    <span
+                      className={`absolute -top-1 -right-1 text-white text-xs font-normal rounded-full w-5 h-5 flex items-center justify-center transition-all font-['Inter',sans-serif] ${isSelected ? 'bg-[#1d331d]' : 'bg-gray-600'}`}
+                    >
+                      {count}
+                    </span>
+                  )}
                 </button>
               )
             })}
