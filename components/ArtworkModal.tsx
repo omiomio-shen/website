@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import { XIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import Image from 'next/image'
 
@@ -16,6 +16,12 @@ interface ArtworkModalProps {
   onNavigate: (index: number) => void
 }
 
+// Track session state across paintings
+type SessionState = {
+  selectedEmotions: Set<string>
+  pendingChanges: Record<string, number> // emotion -> delta
+}
+
 export function ArtworkModal({
   artworks,
   currentIndex,
@@ -25,45 +31,239 @@ export function ArtworkModal({
   const [selectedEmotions, setSelectedEmotions] = useState<Set<string>>(
     new Set(),
   )
-  // Initialize with default counts (simulating previous user interactions)
-  const [emotionCounts, setEmotionCounts] = useState<Record<string, number>>(
-    () => {
-      const initialCounts: Record<string, number> = {}
-      artworks[currentIndex].emotions.forEach((emotion) => {
-        // Random count between 5 and 20 to simulate previous users
-        initialCounts[emotion] = Math.floor(Math.random() * 16) + 5
-      })
-      return initialCounts
-    },
-  )
+  const [emotionCounts, setEmotionCounts] = useState<Record<string, number>>({})
+  const [loading, setLoading] = useState(true)
+  
+  // Track session state per painting
+  const sessionStateRef = useRef<Map<number, SessionState>>(new Map())
+  const previousPaintingIdRef = useRef<number | null>(null)
+  const hasCheckedSubmissionRef = useRef<Map<number, boolean>>(new Map())
+  const baseEmotionsRef = useRef<Map<number, Set<string>>>(new Map()) // Original submission state
 
-  const handlePrevious = useCallback(() => {
+  const currentPainting = artworks[currentIndex]
+  const currentPaintingId = currentPainting.id
+
+  // Fetch emotion counts from database
+  const fetchEmotionCounts = useCallback(async (paintingId: number) => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/emotions/${paintingId}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch emotion counts')
+      }
+      const data = await response.json()
+      const counts = data.counts || {}
+      
+      // Apply any pending session changes to the fetched counts
+      const sessionState = sessionStateRef.current.get(paintingId)
+      if (sessionState) {
+        Object.entries(sessionState.pendingChanges).forEach(([emotion, delta]) => {
+          counts[emotion] = (counts[emotion] || 0) + delta
+        })
+      }
+      
+      setEmotionCounts(counts)
+    } catch (error) {
+      console.error('Error fetching emotion counts:', error)
+      // Fallback to 0 for all emotions
+      const fallbackCounts: Record<string, number> = {}
+      artworks.find(a => a.id === paintingId)?.emotions.forEach((emotion) => {
+        fallbackCounts[emotion] = 0
+      })
+      setEmotionCounts(fallbackCounts)
+    } finally {
+      setLoading(false)
+    }
+  }, [artworks])
+
+  // Check if user has already submitted for this painting
+  const checkSubmission = useCallback(async (paintingId: number) => {
+    if (hasCheckedSubmissionRef.current.get(paintingId)) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/emotions/${paintingId}/submission`)
+      if (!response.ok) {
+        return
+      }
+      const data = await response.json()
+      hasCheckedSubmissionRef.current.set(paintingId, true)
+
+      if (data.hasSubmitted && data.previousEmotions) {
+        // Restore previous selections
+        const previousSet = new Set(data.previousEmotions)
+        baseEmotionsRef.current.set(paintingId, new Set(previousSet))
+        
+        // Restore session state
+        const sessionState: SessionState = {
+          selectedEmotions: previousSet,
+          pendingChanges: {}
+        }
+        sessionStateRef.current.set(paintingId, sessionState)
+        
+        // Update UI state
+        setSelectedEmotions(previousSet)
+      } else {
+        // No previous submission, start fresh
+        baseEmotionsRef.current.set(paintingId, new Set())
+        const sessionState = sessionStateRef.current.get(paintingId) || {
+          selectedEmotions: new Set(),
+          pendingChanges: {}
+        }
+        sessionStateRef.current.set(paintingId, sessionState)
+        setSelectedEmotions(new Set())
+      }
+    } catch (error) {
+      console.error('Error checking submission:', error)
+    }
+  }, [])
+
+  // Save current painting's state before navigating
+  const saveCurrentState = useCallback(async (paintingId: number) => {
+    const sessionState = sessionStateRef.current.get(paintingId)
+    if (!sessionState) {
+      return
+    }
+
+    const baseEmotions = baseEmotionsRef.current.get(paintingId) || new Set()
+    const currentEmotions = new Set(selectedEmotions)
+    const selectedArray = Array.from(selectedEmotions)
+
+    // Calculate net deltas from base state
+    const allEmotions = new Set([...baseEmotions, ...currentEmotions])
+    const deltas: Record<string, number> = {}
+
+    for (const emotion of allEmotions) {
+      const wasSelected = baseEmotions.has(emotion)
+      const isSelected = currentEmotions.has(emotion)
+      
+      if (wasSelected && !isSelected) {
+        deltas[emotion] = -1
+      } else if (!wasSelected && isSelected) {
+        deltas[emotion] = 1
+      }
+    }
+
+    // Only save if there are changes or if this is a new submission
+    const hasChanges = Object.keys(deltas).length > 0 || baseEmotions.size === 0
+
+    if (hasChanges) {
+      // Save submission
+      try {
+        await fetch(`/api/emotions/${paintingId}/submission`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            selectedEmotions: selectedArray,
+          }),
+        })
+      } catch (error) {
+        console.error('Error saving submission:', error)
+      }
+
+      // Update emotion counts in database
+      for (const [emotion, delta] of Object.entries(deltas)) {
+        if (delta !== 0) {
+          try {
+            await fetch(`/api/emotions/${paintingId}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                emotion,
+                delta,
+                ipAddress: 'client', // IP will be extracted server-side
+              }),
+            })
+          } catch (error) {
+            console.error(`Error updating ${emotion} count:`, error)
+          }
+        }
+      }
+
+      // Update base emotions to current state
+      baseEmotionsRef.current.set(paintingId, new Set(selectedEmotions))
+    }
+  }, [selectedEmotions])
+
+  // Load state when painting changes
+  useEffect(() => {
+    // Save previous painting's state
+    if (previousPaintingIdRef.current !== null && previousPaintingIdRef.current !== currentPaintingId) {
+      saveCurrentState(previousPaintingIdRef.current)
+    }
+
+    // Load new painting's state
+    previousPaintingIdRef.current = currentPaintingId
+    
+    // Fetch emotion counts
+    fetchEmotionCounts(currentPaintingId)
+    
+    // Check for previous submission
+    checkSubmission(currentPaintingId)
+
+    // Restore session state if exists (from this session)
+    // Note: This will be called after fetchEmotionCounts completes
+    const sessionState = sessionStateRef.current.get(currentPaintingId)
+    if (!sessionState) {
+      // Initialize session state if it doesn't exist
+      sessionStateRef.current.set(currentPaintingId, {
+        selectedEmotions: new Set(),
+        pendingChanges: {}
+      })
+    }
+  }, [currentPaintingId, fetchEmotionCounts, checkSubmission, saveCurrentState])
+
+  const handlePrevious = useCallback(async () => {
+    // Save current state before navigating
+    await saveCurrentState(currentPaintingId)
+    
     const newIndex = currentIndex === 0 ? artworks.length - 1 : currentIndex - 1
     onNavigate(newIndex)
-  }, [currentIndex, artworks.length, onNavigate])
+  }, [currentIndex, currentPaintingId, artworks.length, onNavigate, saveCurrentState])
 
-  const handleNext = useCallback(() => {
+  const handleNext = useCallback(async () => {
+    // Save current state before navigating
+    await saveCurrentState(currentPaintingId)
+    
     const newIndex = currentIndex === artworks.length - 1 ? 0 : currentIndex + 1
     onNavigate(newIndex)
-  }, [currentIndex, artworks.length, onNavigate])
+  }, [currentIndex, currentPaintingId, artworks.length, onNavigate, saveCurrentState])
 
-  const handleEmotionClick = (emotion: string) => {
+  const handleEmotionClick = useCallback((emotion: string) => {
     const newSelected = new Set(selectedEmotions)
-    const newCounts = {
-      ...emotionCounts,
+    const sessionState = sessionStateRef.current.get(currentPaintingId) || {
+      selectedEmotions: new Set(),
+      pendingChanges: {}
     }
+
+    let delta = 0
     if (newSelected.has(emotion)) {
       // Unselect - decrease count by 1
       newSelected.delete(emotion)
-      newCounts[emotion] = Math.max(0, (newCounts[emotion] || 0) - 1)
+      delta = -1
     } else {
       // Select - increase count by 1
       newSelected.add(emotion)
-      newCounts[emotion] = (newCounts[emotion] || 0) + 1
+      delta = 1
     }
+
+    // Update session state
+    sessionState.selectedEmotions = newSelected
+    sessionStateRef.current.set(currentPaintingId, sessionState)
+
+    // Update local counts for display
     setSelectedEmotions(newSelected)
-    setEmotionCounts(newCounts)
-  }
+    setEmotionCounts((prev) => {
+      const newCounts = { ...prev }
+      newCounts[emotion] = Math.max(0, (newCounts[emotion] || 0) + delta)
+      return newCounts
+    })
+  }, [selectedEmotions, currentPaintingId])
 
   useEffect(() => {
     const handleKeyDownGlobal = (e: KeyboardEvent) => {
@@ -76,16 +276,14 @@ export function ArtworkModal({
     return () => window.removeEventListener('keydown', handleKeyDownGlobal)
   }, [handlePrevious, handleNext, onClose])
 
-  // Update emotion counts when currentIndex changes
+  // Save state when modal closes
   useEffect(() => {
-    setSelectedEmotions(new Set())
-    const newCounts: Record<string, number> = {}
-    artworks[currentIndex].emotions.forEach((emotion) => {
-      newCounts[emotion] = Math.floor(Math.random() * 16) + 5
-    })
-    setEmotionCounts(newCounts)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentIndex])
+    return () => {
+      if (previousPaintingIdRef.current !== null) {
+        saveCurrentState(previousPaintingIdRef.current)
+      }
+    }
+  }, [saveCurrentState])
 
   return (
     <div className="fixed inset-0 bg-[#f8f8f6] bg-opacity-95 z-50 flex items-center justify-center">
@@ -162,4 +360,3 @@ export function ArtworkModal({
     </div>
   )
 }
-
