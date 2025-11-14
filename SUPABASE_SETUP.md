@@ -145,3 +145,6 @@ Note: Since we're using the service role key in API routes, the policies above w
 - The `NEXT_PUBLIC_SUPABASE_ANON_KEY` is safe to expose (it's public)
 - IP-based rate limiting is handled by the database constraints
 
+
+
+
