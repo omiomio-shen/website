@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 
+// Disable caching for this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Get emotion counts for a painting
 export async function GET(
   request: NextRequest,
@@ -36,7 +40,14 @@ export async function GET(
       counts[item.emotion] = item.count || 0
     })
 
-    return NextResponse.json({ counts })
+    // Disable caching to ensure fresh data in production
+    return NextResponse.json({ counts }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    })
   } catch (error) {
     console.error('Unexpected error:', error)
     return NextResponse.json(

@@ -176,7 +176,9 @@ export function ArtworkModal({
       // Load base emotions for all paintings from database
       for (const artwork of artworks) {
         try {
-          const response = await fetch(`/api/emotions/${artwork.id}/submission`)
+          const response = await fetch(`/api/emotions/${artwork.id}/submission`, {
+            cache: 'no-store',
+          })
           if (response.ok) {
             const data = await response.json() as { hasSubmitted: boolean; previousEmotions?: string[] }
             if (data.hasSubmitted && data.previousEmotions) {
@@ -194,16 +196,33 @@ export function ArtworkModal({
           updatePaintingState(artwork.id, [], [])
         }
       }
+      
+      // After initialization, refetch counts for current painting to apply optimistic updates
+      // This ensures counts are correct even if they were fetched before initialization completed
+      const paintingId = currentPaintingId
+      if (paintingId) {
+        // Use setTimeout to ensure this runs after the current render cycle
+        setTimeout(() => {
+          fetchEmotionCounts(paintingId)
+        }, 0)
+      }
     }
 
     initializeSession()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artworks])
 
   // Fetch emotion counts from database and apply session changes
   const fetchEmotionCounts = useCallback(async (paintingId: number) => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/emotions/${paintingId}`)
+      // Use cache: 'no-store' to bypass browser and Next.js cache in production
+      const response = await fetch(`/api/emotions/${paintingId}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+        },
+      })
       if (!response.ok) {
         throw new Error('Failed to fetch emotion counts')
       }
