@@ -21,6 +21,7 @@ export async function GET(
       )
     }
 
+    // Always fetch fresh data from Supabase (no caching)
     const { data, error } = await supabaseServer
       .from('emotion_counts')
       .select('emotion, count')
@@ -40,12 +41,13 @@ export async function GET(
       counts[item.emotion] = item.count || 0
     })
 
-    // Disable caching to ensure fresh data in production
+    // Disable all forms of caching to ensure fresh data in production
     return NextResponse.json({ counts }, {
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
         'Pragma': 'no-cache',
         'Expires': '0',
+        'X-Cache-Status': 'DYNAMIC',
       },
     })
   } catch (error) {

@@ -196,31 +196,25 @@ export function ArtworkModal({
           updatePaintingState(artwork.id, [], [])
         }
       }
-      
-      // After initialization, refetch counts for current painting to apply optimistic updates
-      // This ensures counts are correct even if they were fetched before initialization completed
-      const paintingId = currentPaintingId
-      if (paintingId) {
-        // Use setTimeout to ensure this runs after the current render cycle
-        setTimeout(() => {
-          fetchEmotionCounts(paintingId)
-        }, 0)
-      }
     }
 
     initializeSession()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artworks])
 
-  // Fetch emotion counts from database and apply session changes
+  // Fetch emotion counts from database - show database counts directly
+  // Optimistic updates are handled separately in handleEmotionClick
   const fetchEmotionCounts = useCallback(async (paintingId: number) => {
     try {
       setLoading(true)
       // Use cache: 'no-store' to bypass browser and Next.js cache in production
-      const response = await fetch(`/api/emotions/${paintingId}`, {
+      // Add timestamp to ensure fresh fetch
+      const timestamp = Date.now()
+      const response = await fetch(`/api/emotions/${paintingId}?t=${timestamp}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
         },
       })
       if (!response.ok) {
@@ -229,39 +223,8 @@ export function ArtworkModal({
       const data = await response.json()
       const counts = data.counts || {}
       
-      // Apply optimistic updates for unsaved session changes
-      // The database counts already include baseEmotions (from previous submissions)
-      // So we only need to apply deltas for changes made in this session
-      const paintingState = getPaintingState(paintingId)
-      if (paintingState) {
-        // Only apply optimistic updates if baseEmotions has been initialized
-        // (i.e., we've checked with the database for this painting)
-        if (baseEmotionsRef.current.has(paintingId)) {
-          const baseEmotions = baseEmotionsRef.current.get(paintingId) || new Set<string>()
-          const sessionEmotions = new Set(paintingState.selectedEmotions)
-          
-          // Calculate deltas from base to session state
-          const allEmotions = new Set([...baseEmotions, ...sessionEmotions])
-          for (const emotion of allEmotions) {
-            const wasSelected = baseEmotions.has(emotion)
-            const isSelected = sessionEmotions.has(emotion)
-            
-            // Only apply delta if there's an actual change from base state
-            if (wasSelected !== isSelected) {
-              if (wasSelected && !isSelected) {
-                // User unselected: decrease count by 1 (optimistic)
-                counts[emotion] = Math.max(0, (counts[emotion] || 0) - 1)
-              } else if (!wasSelected && isSelected) {
-                // User selected: increase count by 1 (optimistic)
-                counts[emotion] = (counts[emotion] || 0) + 1
-              }
-            }
-          }
-        }
-        // If baseEmotions hasn't been initialized yet, just show database counts as-is
-        // (don't apply optimistic updates until we know the base state)
-      }
-      
+      // Show database counts directly - they are the source of truth
+      // Don't apply optimistic updates here - they're handled in handleEmotionClick
       setEmotionCounts(counts)
     } catch (error) {
       console.error('Error fetching emotion counts:', error)
