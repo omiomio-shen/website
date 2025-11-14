@@ -210,24 +210,37 @@ export function ArtworkModal({
       const data = await response.json()
       const counts = data.counts || {}
       
-      // Apply session changes to fetched counts
+      // Apply optimistic updates for unsaved session changes
+      // The database counts already include baseEmotions (from previous submissions)
+      // So we only need to apply deltas for changes made in this session
       const paintingState = getPaintingState(paintingId)
       if (paintingState) {
-        const baseEmotions = baseEmotionsRef.current.get(paintingId) || new Set<string>()
-        const sessionEmotions = new Set(paintingState.selectedEmotions)
-        
-        // Calculate deltas from base to session state
-        const allEmotions = new Set([...baseEmotions, ...sessionEmotions])
-        for (const emotion of allEmotions) {
-          const wasSelected = baseEmotions.has(emotion)
-          const isSelected = sessionEmotions.has(emotion)
+        // Only apply optimistic updates if baseEmotions has been initialized
+        // (i.e., we've checked with the database for this painting)
+        if (baseEmotionsRef.current.has(paintingId)) {
+          const baseEmotions = baseEmotionsRef.current.get(paintingId) || new Set<string>()
+          const sessionEmotions = new Set(paintingState.selectedEmotions)
           
-          if (wasSelected && !isSelected) {
-            counts[emotion] = Math.max(0, (counts[emotion] || 0) - 1)
-          } else if (!wasSelected && isSelected) {
-            counts[emotion] = (counts[emotion] || 0) + 1
+          // Calculate deltas from base to session state
+          const allEmotions = new Set([...baseEmotions, ...sessionEmotions])
+          for (const emotion of allEmotions) {
+            const wasSelected = baseEmotions.has(emotion)
+            const isSelected = sessionEmotions.has(emotion)
+            
+            // Only apply delta if there's an actual change from base state
+            if (wasSelected !== isSelected) {
+              if (wasSelected && !isSelected) {
+                // User unselected: decrease count by 1 (optimistic)
+                counts[emotion] = Math.max(0, (counts[emotion] || 0) - 1)
+              } else if (!wasSelected && isSelected) {
+                // User selected: increase count by 1 (optimistic)
+                counts[emotion] = (counts[emotion] || 0) + 1
+              }
+            }
           }
         }
+        // If baseEmotions hasn't been initialized yet, just show database counts as-is
+        // (don't apply optimistic updates until we know the base state)
       }
       
       setEmotionCounts(counts)
