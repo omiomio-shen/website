@@ -97,7 +97,9 @@ export async function GET(
     return NextResponse.json(
       { 
         error: 'Internal server error',
-        debug: error instanceof Error ? error.message : 'Unknown error'
+        debug: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString(),
+        deploymentId: 'v2-debug-active'
       },
       { status: 500 }
     )
