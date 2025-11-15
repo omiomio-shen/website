@@ -15,6 +15,18 @@ export async function GET(
     const { paintingId: paintingIdParam } = await params
     const paintingId = parseInt(paintingIdParam)
     
+    // ENHANCED DEBUG LOGGING - START
+    console.log('========== EMOTION COUNTS API CALLED ==========')
+    console.log('[DEBUG] Painting ID:', paintingId)
+    console.log('[DEBUG] Environment check:', {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      supabaseUrlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 20) + '...',
+      nodeEnv: process.env.NODE_ENV,
+      vercelEnv: process.env.VERCEL_ENV,
+    })
+    // ENHANCED DEBUG LOGGING - END
+    
     if (isNaN(paintingId)) {
       return NextResponse.json(
         { error: 'Invalid painting ID' },
@@ -23,14 +35,22 @@ export async function GET(
     }
 
     // Always fetch fresh data from Supabase (no caching)
+    console.log('[DEBUG] Creating Supabase client...')
     const supabase = getSupabaseServer()
+    console.log('[DEBUG] Supabase client created, executing query...')
+    
     const { data, error } = await supabase
       .from('emotion_counts')
       .select('emotion, count')
       .eq('painting_id', paintingId)
 
+    console.log('[DEBUG] Query completed')
+    console.log('[DEBUG] Error:', error)
+    console.log('[DEBUG] Data rows returned:', data?.length || 0)
+    console.log('[DEBUG] Raw data:', JSON.stringify(data, null, 2))
+
     if (error) {
-      console.error('Error fetching emotion counts:', error)
+      console.error('[ERROR] Error fetching emotion counts:', error)
       return NextResponse.json(
         { error: 'Failed to fetch emotion counts' },
         { status: 500 }
@@ -43,9 +63,9 @@ export async function GET(
       counts[item.emotion] = item.count || 0
     })
 
-    // Temporary debug logging
-    console.log(`[DEBUG] Painting ${paintingId} counts:`, counts)
-    console.log(`[DEBUG] Raw data rows:`, data?.length || 0)
+    console.log('[DEBUG] Final counts object:', counts)
+    console.log('[DEBUG] Counts object keys:', Object.keys(counts))
+    console.log('========== END EMOTION COUNTS API ==========\n')
 
     // Disable ALL forms of caching - including Vercel Edge Cache
     return NextResponse.json({ counts }, {
