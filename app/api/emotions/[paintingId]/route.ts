@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseServer } from '@/lib/supabase-server'
 
-// Disable caching for this route
+// Disable ALL caching for this route - critical for production
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+export const runtime = 'nodejs' // Ensure Node.js runtime, not edge
 
 // Get emotion counts for a painting
 export async function GET(
@@ -41,13 +42,16 @@ export async function GET(
       counts[item.emotion] = item.count || 0
     })
 
-    // Disable all forms of caching to ensure fresh data in production
+    // Disable ALL forms of caching - including Vercel Edge Cache
     return NextResponse.json({ counts }, {
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
         'Pragma': 'no-cache',
         'Expires': '0',
         'X-Cache-Status': 'DYNAMIC',
+        'X-Vercel-Cache': 'MISS',
       },
     })
   } catch (error) {

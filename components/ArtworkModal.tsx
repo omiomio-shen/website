@@ -207,14 +207,16 @@ export function ArtworkModal({
   const fetchEmotionCounts = useCallback(async (paintingId: number) => {
     try {
       setLoading(true)
-      // Use cache: 'no-store' to bypass browser and Next.js cache in production
-      // Add timestamp to ensure fresh fetch
+      // Aggressive cache busting for production - use random query param
+      const random = Math.random().toString(36).substring(7)
       const timestamp = Date.now()
-      const response = await fetch(`/api/emotions/${paintingId}?t=${timestamp}`, {
+      const response = await fetch(`/api/emotions/${paintingId}?t=${timestamp}&r=${random}`, {
+        method: 'GET',
         cache: 'no-store',
         headers: {
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
           'Pragma': 'no-cache',
+          'X-Request-ID': `${Date.now()}-${Math.random()}`,
         },
       })
       if (!response.ok) {
