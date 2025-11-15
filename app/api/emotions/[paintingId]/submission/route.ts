@@ -6,6 +6,9 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ paintingId: string }> }
 ) {
+  console.log('========== SUBMISSION CHECK API CALLED ==========')
+  console.log('[DEBUG] Function started at:', new Date().toISOString())
+  
   try {
     const { paintingId: paintingIdParam } = await params
     const paintingId = parseInt(paintingIdParam)
@@ -17,6 +20,12 @@ export async function GET(
         request.ip || 
         'unknown'
 
+    console.log('[DEBUG] Painting ID:', paintingId, 'IP:', ipAddress)
+    console.log('[DEBUG] Environment check:', {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    })
+
     if (isNaN(paintingId)) {
       return NextResponse.json(
         { error: 'Invalid painting ID' },
@@ -24,7 +33,16 @@ export async function GET(
       )
     }
 
-    const supabase = getSupabaseServer()
+    console.log('[DEBUG] Creating Supabase client...')
+    let supabase
+    try {
+      supabase = getSupabaseServer()
+      console.log('[DEBUG] Supabase client created successfully')
+    } catch (supabaseError) {
+      console.error('[CRITICAL ERROR] Failed to create Supabase client:', supabaseError)
+      console.error('[CRITICAL ERROR] Error message:', supabaseError instanceof Error ? supabaseError.message : 'Unknown error')
+      throw supabaseError
+    }
     const { data, error } = await supabase
       .from('user_submissions')
       .select('selected_emotions')
@@ -40,14 +58,24 @@ export async function GET(
       )
     }
 
+    console.log('[DEBUG] Submission check result:', { hasSubmitted: !!data })
+    console.log('========== END SUBMISSION CHECK API ==========\n')
+    
     return NextResponse.json({
       hasSubmitted: !!data,
       previousEmotions: data?.selected_emotions || []
     })
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('[CATCH BLOCK] Unexpected error caught:', error)
+    console.error('[CATCH BLOCK] Error message:', error instanceof Error ? error.message : 'Not an Error object')
+    console.error('[CATCH BLOCK] Error stack:', error instanceof Error ? error.stack : 'No stack')
+    console.log('========== END SUBMISSION CHECK API ==========\n')
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        debug: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

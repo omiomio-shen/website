@@ -11,21 +11,23 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ paintingId: string }> }
 ) {
+  // Log BEFORE try-catch to ensure it runs
+  console.log('========== EMOTION COUNTS API CALLED ==========')
+  console.log('[DEBUG] Function started at:', new Date().toISOString())
+  
   try {
     const { paintingId: paintingIdParam } = await params
     const paintingId = parseInt(paintingIdParam)
     
-    // ENHANCED DEBUG LOGGING - START
-    console.log('========== EMOTION COUNTS API CALLED ==========')
     console.log('[DEBUG] Painting ID:', paintingId)
     console.log('[DEBUG] Environment check:', {
       hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
       supabaseUrlPrefix: process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 20) + '...',
+      serviceKeyPrefix: process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 20) + '...',
       nodeEnv: process.env.NODE_ENV,
       vercelEnv: process.env.VERCEL_ENV,
     })
-    // ENHANCED DEBUG LOGGING - END
     
     if (isNaN(paintingId)) {
       return NextResponse.json(
@@ -36,8 +38,16 @@ export async function GET(
 
     // Always fetch fresh data from Supabase (no caching)
     console.log('[DEBUG] Creating Supabase client...')
-    const supabase = getSupabaseServer()
-    console.log('[DEBUG] Supabase client created, executing query...')
+    let supabase
+    try {
+      supabase = getSupabaseServer()
+      console.log('[DEBUG] Supabase client created successfully')
+    } catch (supabaseError) {
+      console.error('[CRITICAL ERROR] Failed to create Supabase client:', supabaseError)
+      console.error('[CRITICAL ERROR] Error message:', supabaseError instanceof Error ? supabaseError.message : 'Unknown error')
+      throw supabaseError
+    }
+    console.log('[DEBUG] Executing query...')
     
     const { data, error } = await supabase
       .from('emotion_counts')
@@ -65,7 +75,6 @@ export async function GET(
 
     console.log('[DEBUG] Final counts object:', counts)
     console.log('[DEBUG] Counts object keys:', Object.keys(counts))
-    console.log('========== END EMOTION COUNTS API ==========\n')
 
     // Disable ALL forms of caching - including Vercel Edge Cache
     return NextResponse.json({ counts }, {
@@ -80,11 +89,20 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('[CATCH BLOCK] Unexpected error caught:', error)
+    console.error('[CATCH BLOCK] Error type:', typeof error)
+    console.error('[CATCH BLOCK] Error message:', error instanceof Error ? error.message : 'Not an Error object')
+    console.error('[CATCH BLOCK] Error stack:', error instanceof Error ? error.stack : 'No stack')
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { 
+        error: 'Internal server error',
+        debug: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
+  } finally {
+    console.log('========== END EMOTION COUNTS API ==========\n')
   }
 }
 
