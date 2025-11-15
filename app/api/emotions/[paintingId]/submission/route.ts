@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseServer } from '@/lib/supabase-server'
+import { getSupabaseServer } from '@/lib/supabase-server'
 
 // Check if IP has already submitted for this painting
 export async function GET(
@@ -24,7 +24,8 @@ export async function GET(
       )
     }
 
-    const { data, error } = await supabaseServer
+    const supabase = getSupabaseServer()
+    const { data, error } = await supabase
       .from('user_submissions')
       .select('selected_emotions')
       .eq('painting_id', paintingId)
@@ -86,7 +87,8 @@ export async function POST(
     }
 
     // Upsert the submission
-    const { error } = await supabaseServer
+    const supabase = getSupabaseServer()
+    const { error } = await supabase
       .from('user_submissions')
       .upsert(
         {

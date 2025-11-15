@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseServer } from '@/lib/supabase-server'
+import { getSupabaseServer } from '@/lib/supabase-server'
 
 // Disable ALL caching for this route - critical for production
 export const dynamic = 'force-dynamic'
@@ -23,7 +23,8 @@ export async function GET(
     }
 
     // Always fetch fresh data from Supabase (no caching)
-    const { data, error } = await supabaseServer
+    const supabase = getSupabaseServer()
+    const { data, error } = await supabase
       .from('emotion_counts')
       .select('emotion, count')
       .eq('painting_id', paintingId)
@@ -41,6 +42,10 @@ export async function GET(
     data?.forEach((item) => {
       counts[item.emotion] = item.count || 0
     })
+
+    // Temporary debug logging
+    console.log(`[DEBUG] Painting ${paintingId} counts:`, counts)
+    console.log(`[DEBUG] Raw data rows:`, data?.length || 0)
 
     // Disable ALL forms of caching - including Vercel Edge Cache
     return NextResponse.json({ counts }, {
@@ -90,7 +95,8 @@ export async function POST(
     }
 
     // Get current count
-    const { data: existing, error: fetchError } = await supabaseServer
+    const supabase = getSupabaseServer()
+    const { data: existing, error: fetchError } = await supabase
       .from('emotion_counts')
       .select('count')
       .eq('painting_id', paintingId)
@@ -109,7 +115,7 @@ export async function POST(
     const newCount = Math.max(0, currentCount + delta)
 
     // Upsert the count
-    const { error: upsertError } = await supabaseServer
+    const { error: upsertError } = await supabase
       .from('emotion_counts')
       .upsert(
         {
