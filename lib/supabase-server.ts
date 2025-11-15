@@ -24,6 +24,3 @@ export function getSupabaseServer(): SupabaseClient {
     }
   })
 }
-
-// Export a function instead of a singleton
-export const supabaseServer = getSupabaseServer()
