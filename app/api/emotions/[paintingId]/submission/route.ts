@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseServer } from '@/lib/supabase-server'
 
-// Check if IP has already submitted for this painting
+// Check if IP+session has already submitted for this painting
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ paintingId: string }> }
@@ -12,6 +12,7 @@ export async function GET(
   try {
     const { paintingId: paintingIdParam } = await params
     const paintingId = parseInt(paintingIdParam)
+    
     // Extract IP address, handling various proxy scenarios
     const forwardedFor = request.headers.get('x-forwarded-for')
     const ipAddress = forwardedFor 
@@ -20,7 +21,11 @@ export async function GET(
         request.ip || 
         'unknown'
 
-    console.log('[DEBUG] Painting ID:', paintingId, 'IP:', ipAddress)
+    // Extract session_id from query parameter
+    const { searchParams } = new URL(request.url)
+    const sessionId = searchParams.get('session_id') || ''
+
+    console.log('[DEBUG] Painting ID:', paintingId, 'IP:', ipAddress, 'Session ID:', sessionId)
     console.log('[DEBUG] Environment check:', {
       hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
       hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -29,6 +34,13 @@ export async function GET(
     if (isNaN(paintingId)) {
       return NextResponse.json(
         { error: 'Invalid painting ID' },
+        { status: 400 }
+      )
+    }
+
+    if (!sessionId) {
+      return NextResponse.json(
+        { error: 'Missing session_id' },
         { status: 400 }
       )
     }
@@ -48,6 +60,7 @@ export async function GET(
       .select('selected_emotions')
       .eq('painting_id', paintingId)
       .eq('ip_address', ipAddress)
+      .eq('session_id', sessionId)
       .single()
 
     if (error && error.code !== 'PGRST116') {
@@ -81,7 +94,7 @@ export async function GET(
   }
 }
 
-// Save user submission (called when navigating to next painting)
+// Save user submission (called when session ends)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ paintingId: string }> }
@@ -89,6 +102,7 @@ export async function POST(
   try {
     const { paintingId: paintingIdParam } = await params
     const paintingId = parseInt(paintingIdParam)
+    
     // Extract IP address, handling various proxy scenarios
     const forwardedFor = request.headers.get('x-forwarded-for')
     const ipAddress = forwardedFor 
@@ -105,7 +119,7 @@ export async function POST(
     }
 
     const body = await request.json()
-    const { selectedEmotions } = body
+    const { selectedEmotions, sessionId } = body
 
     if (!Array.isArray(selectedEmotions)) {
       return NextResponse.json(
@@ -114,7 +128,14 @@ export async function POST(
       )
     }
 
-    // Upsert the submission
+    if (!sessionId) {
+      return NextResponse.json(
+        { error: 'sessionId is required' },
+        { status: 400 }
+      )
+    }
+
+    // Upsert the submission (allows updates within the same session)
     const supabase = getSupabaseServer()
     const { error } = await supabase
       .from('user_submissions')
@@ -122,10 +143,11 @@ export async function POST(
         {
           painting_id: paintingId,
           ip_address: ipAddress,
+          session_id: sessionId,
           selected_emotions: selectedEmotions,
         },
         {
-          onConflict: 'painting_id,ip_address',
+          onConflict: 'painting_id,ip_address,session_id',
         }
       )
 

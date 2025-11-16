@@ -9,20 +9,21 @@ CREATE TABLE IF NOT EXISTS emotion_counts (
   UNIQUE(painting_id, emotion)
 );
 
--- Create user_submissions table to track IP addresses and prevent duplicate submissions
+-- Create user_submissions table to track session-based voting (allows multiple votes across sessions)
 CREATE TABLE IF NOT EXISTS user_submissions (
   id BIGSERIAL PRIMARY KEY,
   painting_id INTEGER NOT NULL,
   ip_address TEXT NOT NULL,
+  session_id TEXT NOT NULL,
   selected_emotions TEXT[] NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(painting_id, ip_address)
+  UNIQUE(painting_id, ip_address, session_id)
 );
 
 -- Create index for faster lookups
 CREATE INDEX IF NOT EXISTS idx_emotion_counts_painting_id ON emotion_counts(painting_id);
-CREATE INDEX IF NOT EXISTS idx_user_submissions_painting_ip ON user_submissions(painting_id, ip_address);
+CREATE INDEX IF NOT EXISTS idx_user_submissions_painting_ip_session ON user_submissions(painting_id, ip_address, session_id);
 
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

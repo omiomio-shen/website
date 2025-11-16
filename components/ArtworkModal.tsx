@@ -46,6 +46,8 @@ export function ArtworkModal({
   // Save all session changes to database (called on session end)
   const saveSessionToDatabase = useCallback(async () => {
     const sessionPaintings = getAllSessionPaintings()
+    const sessionState = getOrInitializeSessionState()
+    const sessionId = sessionState.sessionId
     
     for (const [paintingIdStr, paintingState] of Object.entries(sessionPaintings)) {
       const paintingId = parseInt(paintingIdStr)
@@ -74,7 +76,7 @@ export function ArtworkModal({
       const hasChanges = Object.keys(deltas).length > 0
 
       if (hasChanges) {
-        // Save submission
+        // Save submission with session_id
         try {
           await fetch(`/api/emotions/${paintingId}/submission`, {
             method: 'POST',
@@ -83,6 +85,7 @@ export function ArtworkModal({
             },
             body: JSON.stringify({
               selectedEmotions: selectedArray,
+              sessionId: sessionId,
             }),
           })
         } catch (error) {
@@ -170,13 +173,14 @@ export function ArtworkModal({
     hasInitializedRef.current = true
 
     const initializeSession = async () => {
-      // Initialize session state
-      getOrInitializeSessionState()
+      // Initialize session state and get session ID
+      const sessionState = getOrInitializeSessionState()
+      const sessionId = sessionState.sessionId
 
       // Load base emotions for all paintings from database
       for (const artwork of artworks) {
         try {
-          const response = await fetch(`/api/emotions/${artwork.id}/submission`, {
+          const response = await fetch(`/api/emotions/${artwork.id}/submission?session_id=${encodeURIComponent(sessionId)}`, {
             cache: 'no-store',
           })
           if (response.ok) {
