@@ -113,29 +113,62 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ paintingId: string }> }
 ) {
+  console.log('========== EMOTION COUNTS POST API CALLED ==========')
+  console.log('[DEBUG] Function started at:', new Date().toISOString())
+  console.log('[DEBUG] Request method:', request.method)
+  console.log('[DEBUG] Request headers:', {
+    contentType: request.headers.get('content-type'),
+    contentLength: request.headers.get('content-length'),
+    userAgent: request.headers.get('user-agent'),
+  })
+  
   try {
     const { paintingId: paintingIdParam } = await params
     const paintingId = parseInt(paintingIdParam)
     
+    console.log('[DEBUG] Painting ID:', paintingId)
+    
     if (isNaN(paintingId)) {
+      console.log('[ERROR] Invalid painting ID')
       return NextResponse.json(
         { error: 'Invalid painting ID' },
         { status: 400 }
       )
     }
 
-    const body = await request.json()
+    console.log('[DEBUG] Attempting to parse request body...')
+    let body
+    try {
+      body = await request.json()
+      console.log('[DEBUG] Body parsed successfully:', JSON.stringify(body))
+    } catch (parseError) {
+      console.error('[CRITICAL ERROR] Failed to parse request body:', parseError)
+      console.error('[CRITICAL ERROR] Parse error message:', parseError instanceof Error ? parseError.message : 'Unknown error')
+      return NextResponse.json(
+        { error: 'Failed to parse request body', debug: parseError instanceof Error ? parseError.message : 'Unknown' },
+        { status: 400 }
+      )
+    }
+    
     const { emotion, delta, ipAddress } = body
 
+    console.log('[DEBUG] Emotion:', emotion)
+    console.log('[DEBUG] Delta:', delta)
+    console.log('[DEBUG] IP Address:', ipAddress)
+
     if (!emotion || typeof delta !== 'number' || !ipAddress) {
+      console.log('[ERROR] Missing required fields:', { emotion, delta: typeof delta, ipAddress })
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       )
     }
 
+    console.log('[DEBUG] Creating Supabase client...')
     // Get current count
     const supabase = getSupabaseServer()
+    console.log('[DEBUG] Fetching existing count...')
+    
     const { data: existing, error: fetchError } = await supabase
       .from('emotion_counts')
       .select('count')
@@ -143,8 +176,11 @@ export async function POST(
       .eq('emotion', emotion)
       .single()
 
+    console.log('[DEBUG] Fetch result:', { existing, fetchError })
+
     if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116 = no rows returned
-      console.error('Error fetching existing count:', fetchError)
+      console.error('[ERROR] Error fetching existing count:', fetchError)
+      console.error('[ERROR] Fetch error details:', JSON.stringify(fetchError, null, 2))
       return NextResponse.json(
         { error: 'Failed to fetch existing count' },
         { status: 500 }
@@ -153,6 +189,9 @@ export async function POST(
 
     const currentCount = existing?.count || 0
     const newCount = Math.max(0, currentCount + delta)
+
+    console.log('[DEBUG] Count calculation:', { currentCount, delta, newCount })
+    console.log('[DEBUG] Upserting emotion count to database...')
 
     // Upsert the count
     const { error: upsertError } = await supabase
@@ -169,16 +208,22 @@ export async function POST(
       )
 
     if (upsertError) {
-      console.error('Error updating emotion count:', upsertError)
+      console.error('[ERROR] Error updating emotion count:', upsertError)
+      console.error('[ERROR] Upsert error details:', JSON.stringify(upsertError, null, 2))
       return NextResponse.json(
         { error: 'Failed to update emotion count' },
         { status: 500 }
       )
     }
 
+    console.log('[SUCCESS] Emotion count updated successfully!')
+    console.log('========== END EMOTION COUNTS POST API ==========\n')
     return NextResponse.json({ success: true, newCount })
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('[CATCH BLOCK] Unexpected error caught:', error)
+    console.error('[CATCH BLOCK] Error message:', error instanceof Error ? error.message : 'Not an Error object')
+    console.error('[CATCH BLOCK] Error stack:', error instanceof Error ? error.stack : 'No stack')
+    console.log('========== END EMOTION COUNTS POST API ==========\n')
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

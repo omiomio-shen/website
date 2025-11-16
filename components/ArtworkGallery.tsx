@@ -218,7 +218,7 @@ export function ArtworkGallery() {
       if (isSaving) return
       isSaving = true
 
-      // Use sendBeacon for reliable save on tab close
+      // Use fetch with keepalive for reliable save on tab close
       const sessionPaintings = getAllSessionPaintings()
       const sessionState = getOrInitializeSessionState()
       const sessionId = sessionState.sessionId
@@ -227,7 +227,9 @@ export function ArtworkGallery() {
         return
       }
 
-      // Send data using sendBeacon (works synchronously on unload)
+      console.log('[BEFOREUNLOAD] Starting save process for', Object.keys(sessionPaintings).length, 'paintings')
+
+      // Send data using fetch with keepalive (more reliable than sendBeacon)
       for (const [paintingIdStr, paintingState] of Object.entries(sessionPaintings)) {
         const paintingId = parseInt(paintingIdStr)
         if (isNaN(paintingId)) continue
@@ -254,15 +256,24 @@ export function ArtworkGallery() {
         const hasChanges = Object.keys(deltas).length > 0
 
         if (hasChanges) {
-          // Save submission
+          console.log('[BEFOREUNLOAD] Saving painting', paintingId, 'with deltas:', deltas)
+          
+          // Save submission - using fetch with keepalive
           const submissionData = JSON.stringify({
             selectedEmotions: selectedArray,
             sessionId: sessionId,
           })
-          navigator.sendBeacon(
-            `/api/emotions/${paintingId}/submission`,
-            new Blob([submissionData], { type: 'application/json' })
-          )
+          
+          fetch(`/api/emotions/${paintingId}/submission`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: submissionData,
+            keepalive: true, // Critical for unload events
+          }).catch((error) => {
+            console.error('[BEFOREUNLOAD] Error saving submission:', error)
+          })
 
           // Update emotion counts
           for (const [emotion, delta] of Object.entries(deltas)) {
@@ -272,10 +283,17 @@ export function ArtworkGallery() {
                 delta,
                 ipAddress: 'client',
               })
-              navigator.sendBeacon(
-                `/api/emotions/${paintingId}`,
-                new Blob([countData], { type: 'application/json' })
-              )
+              
+              fetch(`/api/emotions/${paintingId}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: countData,
+                keepalive: true, // Critical for unload events
+              }).catch((error) => {
+                console.error('[BEFOREUNLOAD] Error updating emotion count:', error)
+              })
             }
           }
         }
@@ -283,6 +301,7 @@ export function ArtworkGallery() {
 
       // Clear session state
       clearSessionState()
+      console.log('[BEFOREUNLOAD] Save process completed')
     }
 
     // Save when tab becomes hidden (backup for mobile/background tabs)

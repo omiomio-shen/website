@@ -99,9 +99,20 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ paintingId: string }> }
 ) {
+  console.log('========== SUBMISSION POST API CALLED ==========')
+  console.log('[DEBUG] Function started at:', new Date().toISOString())
+  console.log('[DEBUG] Request method:', request.method)
+  console.log('[DEBUG] Request headers:', {
+    contentType: request.headers.get('content-type'),
+    contentLength: request.headers.get('content-length'),
+    userAgent: request.headers.get('user-agent'),
+  })
+  
   try {
     const { paintingId: paintingIdParam } = await params
     const paintingId = parseInt(paintingIdParam)
+    
+    console.log('[DEBUG] Painting ID:', paintingId)
     
     // Extract IP address, handling various proxy scenarios
     const forwardedFor = request.headers.get('x-forwarded-for')
@@ -110,18 +121,38 @@ export async function POST(
       : request.headers.get('x-real-ip') || 
         request.ip || 
         'unknown'
+    
+    console.log('[DEBUG] IP Address:', ipAddress)
 
     if (isNaN(paintingId)) {
+      console.log('[ERROR] Invalid painting ID')
       return NextResponse.json(
         { error: 'Invalid painting ID' },
         { status: 400 }
       )
     }
 
-    const body = await request.json()
+    console.log('[DEBUG] Attempting to parse request body...')
+    let body
+    try {
+      body = await request.json()
+      console.log('[DEBUG] Body parsed successfully:', JSON.stringify(body))
+    } catch (parseError) {
+      console.error('[CRITICAL ERROR] Failed to parse request body:', parseError)
+      console.error('[CRITICAL ERROR] Parse error message:', parseError instanceof Error ? parseError.message : 'Unknown error')
+      return NextResponse.json(
+        { error: 'Failed to parse request body', debug: parseError instanceof Error ? parseError.message : 'Unknown' },
+        { status: 400 }
+      )
+    }
+    
     const { selectedEmotions, sessionId } = body
 
+    console.log('[DEBUG] Selected emotions:', selectedEmotions)
+    console.log('[DEBUG] Session ID:', sessionId)
+
     if (!Array.isArray(selectedEmotions)) {
+      console.log('[ERROR] selectedEmotions is not an array:', typeof selectedEmotions)
       return NextResponse.json(
         { error: 'selectedEmotions must be an array' },
         { status: 400 }
@@ -129,14 +160,18 @@ export async function POST(
     }
 
     if (!sessionId) {
+      console.log('[ERROR] Missing sessionId')
       return NextResponse.json(
         { error: 'sessionId is required' },
         { status: 400 }
       )
     }
 
+    console.log('[DEBUG] Creating Supabase client...')
     // Upsert the submission (allows updates within the same session)
     const supabase = getSupabaseServer()
+    console.log('[DEBUG] Upserting submission to database...')
+    
     const { error } = await supabase
       .from('user_submissions')
       .upsert(
@@ -152,16 +187,22 @@ export async function POST(
       )
 
     if (error) {
-      console.error('Error saving submission:', error)
+      console.error('[ERROR] Error saving submission:', error)
+      console.error('[ERROR] Error details:', JSON.stringify(error, null, 2))
       return NextResponse.json(
         { error: 'Failed to save submission' },
         { status: 500 }
       )
     }
 
+    console.log('[SUCCESS] Submission saved successfully!')
+    console.log('========== END SUBMISSION POST API ==========\n')
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Unexpected error:', error)
+    console.error('[CATCH BLOCK] Unexpected error caught:', error)
+    console.error('[CATCH BLOCK] Error message:', error instanceof Error ? error.message : 'Not an Error object')
+    console.error('[CATCH BLOCK] Error stack:', error instanceof Error ? error.stack : 'No stack')
+    console.log('========== END SUBMISSION POST API ==========\n')
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
