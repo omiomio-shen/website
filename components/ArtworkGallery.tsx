@@ -129,6 +129,56 @@ const artworks = [
 export function ArtworkGallery() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [activeNav, setActiveNav] = useState('Paintings')
+  const [preloadedCounts, setPreloadedCounts] = useState<Record<number, Record<string, number>>>({})
+
+  // Preload all emotion counts on mount for instant modal display
+  useEffect(() => {
+    const preloadEmotionCounts = async () => {
+      console.log('[PRELOAD] Starting to preload emotion counts for all paintings...')
+      const startTime = performance.now()
+      
+      // Fetch all counts in parallel
+      const fetchPromises = artworks.map(async (artwork) => {
+        try {
+          const random = Math.random().toString(36).substring(7)
+          const timestamp = Date.now()
+          const response = await fetch(`/api/emotions/${artwork.id}?t=${timestamp}&r=${random}`, {
+            method: 'GET',
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+            },
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            return { paintingId: artwork.id, counts: data.counts || {} }
+          }
+          
+          return { paintingId: artwork.id, counts: {} }
+        } catch (error) {
+          console.error(`[PRELOAD] Error fetching counts for painting ${artwork.id}:`, error)
+          return { paintingId: artwork.id, counts: {} }
+        }
+      })
+
+      const results = await Promise.all(fetchPromises)
+      
+      // Convert array to map
+      const countsMap: Record<number, Record<string, number>> = {}
+      results.forEach(({ paintingId, counts }) => {
+        countsMap[paintingId] = counts
+      })
+      
+      setPreloadedCounts(countsMap)
+      
+      const endTime = performance.now()
+      console.log(`[PRELOAD] Finished preloading ${results.length} paintings in ${Math.round(endTime - startTime)}ms`)
+    }
+
+    preloadEmotionCounts()
+  }, [])
 
   // Backup: Save on tab close (in case user closes tab while modal is open)
   // Primary save happens when modal closes
@@ -260,6 +310,7 @@ export function ArtworkGallery() {
           currentIndex={selectedIndex}
           onClose={() => setSelectedIndex(null)}
           onNavigate={setSelectedIndex}
+          preloadedCounts={preloadedCounts}
         />
       )}
     </div>

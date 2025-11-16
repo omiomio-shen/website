@@ -19,6 +19,7 @@ interface ArtworkModalProps {
   currentIndex: number
   onClose: () => void
   onNavigate: (index: number) => void
+  preloadedCounts: Record<number, Record<string, number>>
 }
 
 export function ArtworkModal({
@@ -26,6 +27,7 @@ export function ArtworkModal({
   currentIndex,
   onClose,
   onNavigate,
+  preloadedCounts,
 }: ArtworkModalProps) {
   const [selectedEmotions, setSelectedEmotions] = useState<Set<string>>(
     new Set(),
@@ -66,23 +68,36 @@ export function ArtworkModal({
   const fetchEmotionCounts = useCallback(async (paintingId: number) => {
     try {
       setLoading(true)
-      // Aggressive cache busting for production - use random query param
-      const random = Math.random().toString(36).substring(7)
-      const timestamp = Date.now()
-      const response = await fetch(`/api/emotions/${paintingId}?t=${timestamp}&r=${random}`, {
-        method: 'GET',
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate',
-          'Pragma': 'no-cache',
-          'X-Request-ID': `${Date.now()}-${Math.random()}`,
-        },
-      })
-      if (!response.ok) {
-        throw new Error('Failed to fetch emotion counts')
+      
+      // Check if we have preloaded data for this painting
+      const preloadedData = preloadedCounts[paintingId]
+      
+      let baseCounts: Record<string, number>
+      
+      if (preloadedData && Object.keys(preloadedData).length > 0) {
+        // Use preloaded data for instant display
+        console.log(`[MODAL] Using preloaded counts for painting ${paintingId}`)
+        baseCounts = preloadedData
+      } else {
+        // Fall back to fetching if preload failed or is still loading
+        console.log(`[MODAL] Fetching counts for painting ${paintingId} (preload not available)`)
+        const random = Math.random().toString(36).substring(7)
+        const timestamp = Date.now()
+        const response = await fetch(`/api/emotions/${paintingId}?t=${timestamp}&r=${random}`, {
+          method: 'GET',
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'X-Request-ID': `${Date.now()}-${Math.random()}`,
+          },
+        })
+        if (!response.ok) {
+          throw new Error('Failed to fetch emotion counts')
+        }
+        const data = await response.json()
+        baseCounts = data.counts || {}
       }
-      const data = await response.json()
-      const baseCounts = data.counts || {}
       
       // Apply optimistic updates from this session
       const optimisticDeltas = optimisticCountsRef.current.get(paintingId) || {}
@@ -104,7 +119,7 @@ export function ArtworkModal({
     } finally {
       setLoading(false)
     }
-  }, [artworks])
+  }, [artworks, preloadedCounts])
 
   // Load state when painting changes (with lazy loading)
   useEffect(() => {
