@@ -250,7 +250,7 @@ export function ArtworkGallery() {
   return (
     <div className="w-full min-h-screen px-8 py-6">
       {/* Navigation */}
-      <nav className="max-w-6xl mx-auto mb-12">
+      <nav className="max-w-6xl mx-auto mb-24">
         <div className="flex items-center justify-center gap-12">
           {['Home', 'Product', 'Paintings'].map((item) => (
             <button
@@ -275,22 +275,13 @@ export function ArtworkGallery() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <div className="max-w-6xl mx-auto mb-16 text-center py-12">
-        <h1
-          className="font-bold text-gray-900 text-6xl leading-tight"
-        >
-          Oil Paintings
-        </h1>
-      </div>
-
       {/* Artwork Grid */}
-      <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-        {artworks.map((artwork, index) => (
+      <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-16">
+        {artworks.filter(artwork => artwork.id !== 16).map((artwork, index) => (
           <div
             key={artwork.id}
             onClick={() => setSelectedIndex(index)}
-            className="relative w-full aspect-square rounded-full overflow-hidden cursor-pointer group artwork-shadow scale-90"
+            className="relative w-full aspect-square rounded-full overflow-hidden cursor-pointer group artwork-shadow scale-[0.85]"
           >
             <Image
               src={getThumbnailUrl(artwork.url)}
