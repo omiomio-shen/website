@@ -403,7 +403,7 @@ export function ArtworkModal({
   }, [handlePrevious, handleNext, handleClose])
 
   return (
-    <div className="fixed inset-0 bg-[#f8f8f6] z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-[#F9FAFB] z-50 flex items-center justify-center">
       {/* Close Button */}
       <button
         onClick={handleClose}
