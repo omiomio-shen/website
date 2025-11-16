@@ -8,6 +8,7 @@ export type SessionState = {
     [paintingId: number]: {
       selectedEmotions: string[]
       baseEmotions: string[] // Original state when session started
+      optimisticDeltas?: Record<string, number> // Count deltas for optimistic UI updates
     }
   }
 }
@@ -92,7 +93,8 @@ export function getOrInitializeSessionState(): SessionState {
 export function updatePaintingState(
   paintingId: number,
   selectedEmotions: string[],
-  baseEmotions?: string[]
+  baseEmotions?: string[],
+  optimisticDeltas?: Record<string, number>
 ): void {
   const state = getOrInitializeSessionState()
   
@@ -100,17 +102,25 @@ export function updatePaintingState(
     state.paintings[paintingId] = {
       selectedEmotions: [],
       baseEmotions: baseEmotions || [],
+      optimisticDeltas: optimisticDeltas || {},
     }
   } else {
     // Preserve existing baseEmotions if not provided
     if (baseEmotions === undefined) {
       baseEmotions = state.paintings[paintingId].baseEmotions
     }
+    // Preserve existing optimisticDeltas if not provided
+    if (optimisticDeltas === undefined) {
+      optimisticDeltas = state.paintings[paintingId].optimisticDeltas || {}
+    }
   }
 
   state.paintings[paintingId].selectedEmotions = selectedEmotions
   if (baseEmotions !== undefined) {
     state.paintings[paintingId].baseEmotions = baseEmotions
+  }
+  if (optimisticDeltas !== undefined) {
+    state.paintings[paintingId].optimisticDeltas = optimisticDeltas
   }
 
   saveSessionState(state)
@@ -122,6 +132,7 @@ export function updatePaintingState(
 export function getPaintingState(paintingId: number): {
   selectedEmotions: string[]
   baseEmotions: string[]
+  optimisticDeltas?: Record<string, number>
 } | null {
   const state = getSessionState()
   if (!state || !state.paintings[paintingId]) {

@@ -189,17 +189,17 @@ export function ArtworkModal({
             const data = await response.json() as { hasSubmitted: boolean; previousEmotions?: string[] }
             if (data.hasSubmitted && data.previousEmotions) {
               baseEmotionsRef.current.set(artwork.id, new Set(data.previousEmotions))
-              // Initialize session state with base emotions
-              updatePaintingState(artwork.id, data.previousEmotions, data.previousEmotions)
+              // Initialize session state with base emotions and empty optimistic deltas
+              updatePaintingState(artwork.id, data.previousEmotions, data.previousEmotions, {})
             } else {
               baseEmotionsRef.current.set(artwork.id, new Set())
-              updatePaintingState(artwork.id, [], [])
+              updatePaintingState(artwork.id, [], [], {})
             }
           }
         } catch (error) {
           console.error(`Error loading base emotions for painting ${artwork.id}:`, error)
           baseEmotionsRef.current.set(artwork.id, new Set())
-          updatePaintingState(artwork.id, [], [])
+          updatePaintingState(artwork.id, [], [], {})
         }
       }
     }
@@ -264,13 +264,18 @@ export function ArtworkModal({
         baseEmotionsRef.current.set(currentPaintingId, new Set(paintingState.baseEmotions))
       }
       
+      // Restore optimistic deltas from sessionStorage
+      if (paintingState.optimisticDeltas) {
+        optimisticCountsRef.current.set(currentPaintingId, paintingState.optimisticDeltas)
+      }
+      
       const selectedSet = new Set(paintingState.selectedEmotions)
       setSelectedEmotions(selectedSet)
     } else {
       // Initialize if doesn't exist
       const baseEmotions = baseEmotionsRef.current.get(currentPaintingId) || new Set<string>()
       const baseArray = Array.from(baseEmotions)
-      updatePaintingState(currentPaintingId, baseArray, baseArray)
+      updatePaintingState(currentPaintingId, baseArray, baseArray, {})
       setSelectedEmotions(new Set(baseEmotions))
     }
     
@@ -281,7 +286,8 @@ export function ArtworkModal({
   const handlePrevious = useCallback(() => {
     // Save current state to sessionStorage before navigating
     const selectedArray = Array.from(selectedEmotions)
-    updatePaintingState(currentPaintingId, selectedArray)
+    const optimisticDeltas = optimisticCountsRef.current.get(currentPaintingId) || {}
+    updatePaintingState(currentPaintingId, selectedArray, undefined, optimisticDeltas)
     
     const newIndex = currentIndex === 0 ? artworks.length - 1 : currentIndex - 1
     onNavigate(newIndex)
@@ -290,7 +296,8 @@ export function ArtworkModal({
   const handleNext = useCallback(() => {
     // Save current state to sessionStorage before navigating
     const selectedArray = Array.from(selectedEmotions)
-    updatePaintingState(currentPaintingId, selectedArray)
+    const optimisticDeltas = optimisticCountsRef.current.get(currentPaintingId) || {}
+    updatePaintingState(currentPaintingId, selectedArray, undefined, optimisticDeltas)
     
     const newIndex = currentIndex === artworks.length - 1 ? 0 : currentIndex + 1
     onNavigate(newIndex)
@@ -310,11 +317,8 @@ export function ArtworkModal({
       delta = 1
     }
 
-    // Update sessionStorage immediately
-    const selectedArray = Array.from(newSelected)
-    updatePaintingState(currentPaintingId, selectedArray)
-
     // Track optimistic delta for this painting
+    const selectedArray = Array.from(newSelected)
     const currentDeltas = optimisticCountsRef.current.get(currentPaintingId) || {}
     const baseEmotions = baseEmotionsRef.current.get(currentPaintingId) || new Set<string>()
     
@@ -339,6 +343,9 @@ export function ArtworkModal({
     }
     optimisticCountsRef.current.set(currentPaintingId, updatedDeltas)
 
+    // Save optimistic deltas to sessionStorage
+    updatePaintingState(currentPaintingId, selectedArray, undefined, updatedDeltas)
+
     // Update local state
     setSelectedEmotions(newSelected)
     setEmotionCounts((prev) => {
@@ -358,16 +365,6 @@ export function ArtworkModal({
     window.addEventListener('keydown', handleKeyDownGlobal)
     return () => window.removeEventListener('keydown', handleKeyDownGlobal)
   }, [handlePrevious, handleNext, onClose])
-
-  // Save to sessionStorage when modal closes (but don't save to DB yet)
-  useEffect(() => {
-    return () => {
-      if (previousPaintingIdRef.current !== null) {
-        const selectedArray = Array.from(selectedEmotions)
-        updatePaintingState(previousPaintingIdRef.current, selectedArray)
-      }
-    }
-  }, [selectedEmotions])
 
   return (
     <div className="fixed inset-0 bg-[#f8f8f6] z-50 flex items-center justify-center">
