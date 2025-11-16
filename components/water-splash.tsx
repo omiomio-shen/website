@@ -38,7 +38,7 @@ export function WaterSplash({ visible, containerHeight, settings }: WaterSplashP
           x: Math.random() * 100, // Random position across width (%)
           y: y, // Random position based on coverage
           size: Math.random() * 1.5 + 0.5, // Random base size between 0.5 and 2
-          delay: Math.random() * 5, // Random delay up to 5s
+          delay: Math.random() * 5 - 2, // Random delay from -2s to 3s (negative = mid-animation on first render)
           duration: Math.random() * 1.5 + settings.animationDuration * 0.5, // Random duration based on animation speed
           depthFactor: depthFactor, // Store depth factor for ripple sizing
         }
