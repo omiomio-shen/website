@@ -7,8 +7,6 @@ import {
   getOrInitializeSessionState,
   updatePaintingState,
   getPaintingState,
-  getAllSessionPaintings,
-  clearSessionState,
 } from '@/lib/session-storage'
 
 interface ArtworkModalProps {
@@ -38,134 +36,11 @@ export function ArtworkModal({
   const previousPaintingIdRef = useRef<number | null>(null)
   const baseEmotionsRef = useRef<Map<number, Set<string>>>(new Map()) // Original state when session started
   const hasInitializedRef = useRef(false)
-  const sessionEndHandlerRegisteredRef = useRef(false)
   // Track optimistic count updates per painting during this session
   const optimisticCountsRef = useRef<Map<number, Record<string, number>>>(new Map())
 
   const currentPainting = artworks[currentIndex]
   const currentPaintingId = currentPainting.id
-
-  // Save all session changes to database (called on session end)
-  const saveSessionToDatabase = useCallback(async () => {
-    const sessionPaintings = getAllSessionPaintings()
-    const sessionState = getOrInitializeSessionState()
-    const sessionId = sessionState.sessionId
-    
-    for (const [paintingIdStr, paintingState] of Object.entries(sessionPaintings)) {
-      const paintingId = parseInt(paintingIdStr)
-      if (isNaN(paintingId)) continue
-
-      const baseEmotions = baseEmotionsRef.current.get(paintingId) || new Set<string>()
-      const currentEmotions = new Set(paintingState.selectedEmotions)
-      const selectedArray = Array.from(currentEmotions)
-
-      // Calculate net deltas from base state
-      const allEmotions = new Set([...baseEmotions, ...currentEmotions])
-      const deltas: Record<string, number> = {}
-
-      for (const emotion of allEmotions) {
-        const wasSelected = baseEmotions.has(emotion)
-        const isSelected = currentEmotions.has(emotion)
-        
-        if (wasSelected && !isSelected) {
-          deltas[emotion] = -1
-        } else if (!wasSelected && isSelected) {
-          deltas[emotion] = 1
-        }
-      }
-
-      // Only save if there are changes
-      const hasChanges = Object.keys(deltas).length > 0
-
-      if (hasChanges) {
-        // Save submission with session_id
-        try {
-          await fetch(`/api/emotions/${paintingId}/submission`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              selectedEmotions: selectedArray,
-              sessionId: sessionId,
-            }),
-          })
-        } catch (error) {
-          console.error('Error saving submission:', error)
-        }
-
-        // Update emotion counts in database
-        for (const [emotion, delta] of Object.entries(deltas)) {
-          if (delta !== 0) {
-            try {
-              await fetch(`/api/emotions/${paintingId}`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  emotion,
-                  delta,
-                  ipAddress: 'client', // IP will be extracted server-side
-                }),
-              })
-            } catch (error) {
-              console.error(`Error updating ${emotion} count:`, error)
-            }
-          }
-        }
-      }
-    }
-
-    // Clear session state after saving
-    clearSessionState()
-  }, [])
-
-  // Register session end handler (beforeunload and visibilitychange)
-  useEffect(() => {
-    if (sessionEndHandlerRegisteredRef.current) {
-      return
-    }
-    sessionEndHandlerRegisteredRef.current = true
-
-    let isSaving = false
-
-    const handleSessionEnd = async () => {
-      if (isSaving) {
-        return // Prevent duplicate saves
-      }
-      isSaving = true
-      
-      try {
-        await saveSessionToDatabase()
-      } catch (error) {
-        console.error('Error saving session on end:', error)
-      } finally {
-        isSaving = false
-      }
-    }
-
-    // Save when page is about to unload
-    const handleBeforeUnload = () => {
-      // Use synchronous approach - fire and forget
-      handleSessionEnd()
-    }
-
-    // Save when tab becomes hidden (backup for mobile/background tabs)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        handleSessionEnd()
-      }
-    }
-
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [saveSessionToDatabase])
 
   // Initialize session on mount
   useEffect(() => {

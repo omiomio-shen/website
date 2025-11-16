@@ -1,8 +1,13 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { ArtworkModal } from './ArtworkModal'
 import Image from 'next/image'
+import {
+  getAllSessionPaintings,
+  clearSessionState,
+  getOrInitializeSessionState,
+} from '@/lib/session-storage'
 
 // Helper function to convert image URL to thumbnail version
 function getThumbnailUrl(url: string): string {
@@ -124,6 +129,184 @@ const artworks = [
 export function ArtworkGallery() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [activeNav, setActiveNav] = useState('Paintings')
+
+  // Save session to database when tab closes
+  const saveSessionToDatabase = useCallback(async () => {
+    const sessionPaintings = getAllSessionPaintings()
+    const sessionState = getOrInitializeSessionState()
+    const sessionId = sessionState.sessionId
+    
+    if (!sessionId || Object.keys(sessionPaintings).length === 0) {
+      return // Nothing to save
+    }
+    
+    for (const [paintingIdStr, paintingState] of Object.entries(sessionPaintings)) {
+      const paintingId = parseInt(paintingIdStr)
+      if (isNaN(paintingId)) continue
+
+      const baseEmotions = new Set(paintingState.baseEmotions || [])
+      const currentEmotions = new Set(paintingState.selectedEmotions || [])
+      const selectedArray = Array.from(currentEmotions)
+
+      // Calculate net deltas from base state
+      const allEmotions = new Set([...baseEmotions, ...currentEmotions])
+      const deltas: Record<string, number> = {}
+
+      for (const emotion of allEmotions) {
+        const wasSelected = baseEmotions.has(emotion)
+        const isSelected = currentEmotions.has(emotion)
+        
+        if (wasSelected && !isSelected) {
+          deltas[emotion] = -1
+        } else if (!wasSelected && isSelected) {
+          deltas[emotion] = 1
+        }
+      }
+
+      // Only save if there are changes
+      const hasChanges = Object.keys(deltas).length > 0
+
+      if (hasChanges) {
+        // Save submission with session_id
+        try {
+          await fetch(`/api/emotions/${paintingId}/submission`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              selectedEmotions: selectedArray,
+              sessionId: sessionId,
+            }),
+          })
+        } catch (error) {
+          console.error('Error saving submission:', error)
+        }
+
+        // Update emotion counts in database
+        for (const [emotion, delta] of Object.entries(deltas)) {
+          if (delta !== 0) {
+            try {
+              await fetch(`/api/emotions/${paintingId}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  emotion,
+                  delta,
+                  ipAddress: 'client', // IP will be extracted server-side
+                }),
+              })
+            } catch (error) {
+              console.error(`Error updating ${emotion} count:`, error)
+            }
+          }
+        }
+      }
+    }
+
+    // Clear session state after saving
+    clearSessionState()
+  }, [])
+
+  // Register session end handler at app level (not inside modal)
+  useEffect(() => {
+    let isSaving = false
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isSaving) return
+      isSaving = true
+
+      // Use sendBeacon for reliable save on tab close
+      const sessionPaintings = getAllSessionPaintings()
+      const sessionState = getOrInitializeSessionState()
+      const sessionId = sessionState.sessionId
+      
+      if (!sessionId || Object.keys(sessionPaintings).length === 0) {
+        return
+      }
+
+      // Send data using sendBeacon (works synchronously on unload)
+      for (const [paintingIdStr, paintingState] of Object.entries(sessionPaintings)) {
+        const paintingId = parseInt(paintingIdStr)
+        if (isNaN(paintingId)) continue
+
+        const baseEmotions = new Set(paintingState.baseEmotions || [])
+        const currentEmotions = new Set(paintingState.selectedEmotions || [])
+        const selectedArray = Array.from(currentEmotions)
+
+        // Calculate deltas
+        const allEmotions = new Set([...baseEmotions, ...currentEmotions])
+        const deltas: Record<string, number> = {}
+
+        for (const emotion of allEmotions) {
+          const wasSelected = baseEmotions.has(emotion)
+          const isSelected = currentEmotions.has(emotion)
+          
+          if (wasSelected && !isSelected) {
+            deltas[emotion] = -1
+          } else if (!wasSelected && isSelected) {
+            deltas[emotion] = 1
+          }
+        }
+
+        const hasChanges = Object.keys(deltas).length > 0
+
+        if (hasChanges) {
+          // Save submission
+          const submissionData = JSON.stringify({
+            selectedEmotions: selectedArray,
+            sessionId: sessionId,
+          })
+          navigator.sendBeacon(
+            `/api/emotions/${paintingId}/submission`,
+            new Blob([submissionData], { type: 'application/json' })
+          )
+
+          // Update emotion counts
+          for (const [emotion, delta] of Object.entries(deltas)) {
+            if (delta !== 0) {
+              const countData = JSON.stringify({
+                emotion,
+                delta,
+                ipAddress: 'client',
+              })
+              navigator.sendBeacon(
+                `/api/emotions/${paintingId}`,
+                new Blob([countData], { type: 'application/json' })
+              )
+            }
+          }
+        }
+      }
+
+      // Clear session state
+      clearSessionState()
+    }
+
+    // Save when tab becomes hidden (backup for mobile/background tabs)
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'hidden' && !isSaving) {
+        isSaving = true
+        try {
+          await saveSessionToDatabase()
+        } catch (error) {
+          console.error('Error saving session on visibility change:', error)
+        } finally {
+          isSaving = false
+        }
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [saveSessionToDatabase])
 
   return (
     <div className="w-full min-h-screen px-8 py-6">
