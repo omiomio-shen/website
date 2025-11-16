@@ -39,6 +39,8 @@ export function ArtworkModal({
   const baseEmotionsRef = useRef<Map<number, Set<string>>>(new Map()) // Original state when session started
   const hasInitializedRef = useRef(false)
   const sessionEndHandlerRegisteredRef = useRef(false)
+  // Track optimistic count updates per painting during this session
+  const optimisticCountsRef = useRef<Map<number, Record<string, number>>>(new Map())
 
   const currentPainting = artworks[currentIndex]
   const currentPaintingId = currentPainting.id
@@ -206,8 +208,7 @@ export function ArtworkModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artworks])
 
-  // Fetch emotion counts from database - show database counts directly
-  // Optimistic updates are handled separately in handleEmotionClick
+  // Fetch emotion counts from database and apply optimistic updates
   const fetchEmotionCounts = useCallback(async (paintingId: number) => {
     try {
       setLoading(true)
@@ -227,11 +228,17 @@ export function ArtworkModal({
         throw new Error('Failed to fetch emotion counts')
       }
       const data = await response.json()
-      const counts = data.counts || {}
+      const baseCounts = data.counts || {}
       
-      // Show database counts directly - they are the source of truth
-      // Don't apply optimistic updates here - they're handled in handleEmotionClick
-      setEmotionCounts(counts)
+      // Apply optimistic updates from this session
+      const optimisticDeltas = optimisticCountsRef.current.get(paintingId) || {}
+      const finalCounts = { ...baseCounts }
+      
+      for (const [emotion, delta] of Object.entries(optimisticDeltas)) {
+        finalCounts[emotion] = Math.max(0, (finalCounts[emotion] || 0) + delta)
+      }
+      
+      setEmotionCounts(finalCounts)
     } catch (error) {
       console.error('Error fetching emotion counts:', error)
       // Fallback to 0 for all emotions
@@ -306,6 +313,31 @@ export function ArtworkModal({
     // Update sessionStorage immediately
     const selectedArray = Array.from(newSelected)
     updatePaintingState(currentPaintingId, selectedArray)
+
+    // Track optimistic delta for this painting
+    const currentDeltas = optimisticCountsRef.current.get(currentPaintingId) || {}
+    const baseEmotions = baseEmotionsRef.current.get(currentPaintingId) || new Set<string>()
+    
+    // Calculate net delta from base state
+    const wasInBase = baseEmotions.has(emotion)
+    const isInNew = newSelected.has(emotion)
+    
+    let netDelta = 0
+    if (wasInBase && !isInNew) {
+      netDelta = -1  // Removed from base
+    } else if (!wasInBase && isInNew) {
+      netDelta = 1   // Added to base
+    } else {
+      netDelta = 0   // No change from base
+    }
+    
+    const updatedDeltas = { ...currentDeltas }
+    if (netDelta === 0) {
+      delete updatedDeltas[emotion]  // Back to base state
+    } else {
+      updatedDeltas[emotion] = netDelta
+    }
+    optimisticCountsRef.current.set(currentPaintingId, updatedDeltas)
 
     // Update local state
     setSelectedEmotions(newSelected)
