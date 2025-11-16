@@ -38,9 +38,16 @@ export function ArtworkModal({
   const hasInitializedRef = useRef(false)
   // Track optimistic count updates per painting during this session
   const optimisticCountsRef = useRef<Map<number, Record<string, number>>>(new Map())
+  const hasClosedRef = useRef(false) // Track if we've already saved on close
 
   const currentPainting = artworks[currentIndex]
   const currentPaintingId = currentPainting.id
+
+  // Reset close flag when modal opens (each time)
+  useEffect(() => {
+    hasClosedRef.current = false
+    console.log('[MODAL OPEN] Reset close flag')
+  }, [])
 
   // Initialize session on mount
   useEffect(() => {
@@ -158,6 +165,98 @@ export function ArtworkModal({
     fetchEmotionCounts(currentPaintingId)
   }, [currentPaintingId, fetchEmotionCounts])
 
+  // Save all changes to database
+  const saveAllChangesToDatabase = useCallback(async () => {
+    if (hasClosedRef.current) return // Already saved
+    hasClosedRef.current = true
+    
+    const sessionState = getOrInitializeSessionState()
+    const sessionId = sessionState.sessionId
+    
+    console.log('[MODAL CLOSE] Saving all changes to database...')
+    
+    // Iterate through all paintings that have changes
+    for (const paintingId of baseEmotionsRef.current.keys()) {
+      const paintingState = getPaintingState(paintingId)
+      if (!paintingState) continue
+      
+      const baseEmotions = new Set(paintingState.baseEmotions || [])
+      const currentEmotions = new Set(paintingState.selectedEmotions || [])
+      const selectedArray = Array.from(currentEmotions)
+      
+      // Calculate deltas
+      const allEmotions = new Set([...baseEmotions, ...currentEmotions])
+      const deltas: Record<string, number> = {}
+      
+      for (const emotion of allEmotions) {
+        const wasSelected = baseEmotions.has(emotion)
+        const isSelected = currentEmotions.has(emotion)
+        
+        if (wasSelected && !isSelected) {
+          deltas[emotion] = -1
+        } else if (!wasSelected && isSelected) {
+          deltas[emotion] = 1
+        }
+      }
+      
+      const hasChanges = Object.keys(deltas).length > 0
+      
+      if (hasChanges) {
+        console.log(`[MODAL CLOSE] Saving painting ${paintingId} with deltas:`, deltas)
+        
+        // Save submission
+        try {
+          const response = await fetch(`/api/emotions/${paintingId}/submission`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              selectedEmotions: selectedArray,
+              sessionId: sessionId,
+            }),
+          })
+          console.log(`[MODAL CLOSE] Submission response:`, response.status, response.ok)
+        } catch (error) {
+          console.error(`[MODAL CLOSE] Error saving submission:`, error)
+        }
+        
+        // Update emotion counts
+        for (const [emotion, delta] of Object.entries(deltas)) {
+          if (delta !== 0) {
+            try {
+              const response = await fetch(`/api/emotions/${paintingId}`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  emotion,
+                  delta,
+                  ipAddress: 'client',
+                }),
+              })
+              console.log(`[MODAL CLOSE] Count update response for ${emotion}:`, response.status, response.ok)
+            } catch (error) {
+              console.error(`[MODAL CLOSE] Error updating ${emotion} count:`, error)
+            }
+          }
+        }
+      }
+      
+      // CRITICAL: Always update the baseline after modal close
+      // This ensures next time the modal opens, the baseline matches database
+      console.log(`[MODAL CLOSE] Updating baseline for painting ${paintingId}`)
+      baseEmotionsRef.current.set(paintingId, new Set(selectedArray))
+      updatePaintingState(paintingId, selectedArray, selectedArray, {})
+      
+      // Clear optimistic counts for this painting
+      optimisticCountsRef.current.set(paintingId, {})
+    }
+    
+    console.log('[MODAL CLOSE] All changes saved!')
+  }, [])
+
   const handlePrevious = useCallback(() => {
     // Save current state to sessionStorage before navigating
     const selectedArray = Array.from(selectedEmotions)
@@ -177,6 +276,20 @@ export function ArtworkModal({
     const newIndex = currentIndex === artworks.length - 1 ? 0 : currentIndex + 1
     onNavigate(newIndex)
   }, [currentIndex, currentPaintingId, artworks.length, onNavigate, selectedEmotions])
+
+  // Handle modal close - save to database before closing
+  const handleClose = useCallback(async () => {
+    // Save current painting state first
+    const selectedArray = Array.from(selectedEmotions)
+    const optimisticDeltas = optimisticCountsRef.current.get(currentPaintingId) || {}
+    updatePaintingState(currentPaintingId, selectedArray, undefined, optimisticDeltas)
+    
+    // Save all changes to database
+    await saveAllChangesToDatabase()
+    
+    // Then close the modal
+    onClose()
+  }, [currentPaintingId, selectedEmotions, saveAllChangesToDatabase, onClose])
 
   const handleEmotionClick = useCallback((emotion: string) => {
     const newSelected = new Set(selectedEmotions)
@@ -232,20 +345,20 @@ export function ArtworkModal({
 
   useEffect(() => {
     const handleKeyDownGlobal = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') handleClose()
       if (e.key === 'ArrowLeft') handlePrevious()
       if (e.key === 'ArrowRight') handleNext()
     }
 
     window.addEventListener('keydown', handleKeyDownGlobal)
     return () => window.removeEventListener('keydown', handleKeyDownGlobal)
-  }, [handlePrevious, handleNext, onClose])
+  }, [handlePrevious, handleNext, handleClose])
 
   return (
     <div className="fixed inset-0 bg-[#f8f8f6] z-50 flex items-center justify-center">
       {/* Close Button */}
       <button
-        onClick={onClose}
+        onClick={handleClose}
         className="absolute top-4 right-4 sm:top-6 sm:right-6 p-2 hover:bg-gray-200 rounded-full transition-colors z-10"
         aria-label="Close modal"
       >
