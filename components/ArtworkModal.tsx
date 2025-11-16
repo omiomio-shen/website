@@ -274,10 +274,36 @@ export function ArtworkModal({
       
       // Clear optimistic counts for this painting
       optimisticCountsRef.current.set(paintingId, {})
+      
+      // Refetch counts from database to update our base counts
+      // This ensures the next time we open the modal, we have fresh data
+      if (hasChanges) {
+        try {
+          const timestamp = Date.now()
+          const random = Math.random().toString(36).substring(7)
+          const response = await fetch(`/api/emotions/${paintingId}?t=${timestamp}&r=${random}`, {
+            method: 'GET',
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              'Pragma': 'no-cache',
+            },
+          })
+          if (response.ok) {
+            const data = await response.json()
+            const freshCounts = data.counts || {}
+            // Update preloaded counts so next open has fresh data
+            preloadedCounts[paintingId] = freshCounts
+            console.log(`[MODAL CLOSE] Refreshed counts for painting ${paintingId}:`, freshCounts)
+          }
+        } catch (error) {
+          console.error(`[MODAL CLOSE] Error refreshing counts for painting ${paintingId}:`, error)
+        }
+      }
     }
     
     console.log('[MODAL CLOSE] All changes saved!')
-  }, [])
+  }, [preloadedCounts])
 
   const handlePrevious = useCallback(() => {
     // Save current state to sessionStorage before navigating
