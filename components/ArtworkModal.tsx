@@ -49,46 +49,18 @@ export function ArtworkModal({
     console.log('[MODAL OPEN] Reset close flag')
   }, [])
 
-  // Initialize session on mount
+  // Initialize session on mount (lightweight - no API calls)
   useEffect(() => {
     if (hasInitializedRef.current) {
       return
     }
     hasInitializedRef.current = true
 
-    const initializeSession = async () => {
-      // Initialize session state and get session ID
-      const sessionState = getOrInitializeSessionState()
-      const sessionId = sessionState.sessionId
-
-      // Load base emotions for all paintings from database
-      for (const artwork of artworks) {
-        try {
-          const response = await fetch(`/api/emotions/${artwork.id}/submission?session_id=${encodeURIComponent(sessionId)}`, {
-            cache: 'no-store',
-          })
-          if (response.ok) {
-            const data = await response.json() as { hasSubmitted: boolean; previousEmotions?: string[] }
-            if (data.hasSubmitted && data.previousEmotions) {
-              baseEmotionsRef.current.set(artwork.id, new Set(data.previousEmotions))
-              // Initialize session state with base emotions and empty optimistic deltas
-              updatePaintingState(artwork.id, data.previousEmotions, data.previousEmotions, {})
-            } else {
-              baseEmotionsRef.current.set(artwork.id, new Set())
-              updatePaintingState(artwork.id, [], [], {})
-            }
-          }
-        } catch (error) {
-          console.error(`Error loading base emotions for painting ${artwork.id}:`, error)
-          baseEmotionsRef.current.set(artwork.id, new Set())
-          updatePaintingState(artwork.id, [], [], {})
-        }
-      }
-    }
-
-    initializeSession()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [artworks])
+    // Just initialize session state to generate/retrieve session ID
+    // Don't fetch any data yet - that will happen on-demand
+    getOrInitializeSessionState()
+    console.log('[MODAL] Session initialized (lazy loading enabled)')
+  }, [])
 
   // Fetch emotion counts from database and apply optimistic updates
   const fetchEmotionCounts = useCallback(async (paintingId: number) => {
@@ -134,35 +106,70 @@ export function ArtworkModal({
     }
   }, [artworks])
 
-  // Load state when painting changes
+  // Load state when painting changes (with lazy loading)
   useEffect(() => {
     previousPaintingIdRef.current = currentPaintingId
     
-    // Restore session state from sessionStorage
-    const paintingState = getPaintingState(currentPaintingId)
-    if (paintingState) {
-      // Restore base emotions to ref if not already set
-      if (!baseEmotionsRef.current.has(currentPaintingId)) {
-        baseEmotionsRef.current.set(currentPaintingId, new Set(paintingState.baseEmotions))
+    const loadPaintingData = async () => {
+      // Check if we've already loaded base emotions for this painting
+      const hasBaseEmotions = baseEmotionsRef.current.has(currentPaintingId)
+      
+      // Try to restore from sessionStorage first
+      const paintingState = getPaintingState(currentPaintingId)
+      
+      if (paintingState) {
+        // We have session state - restore it
+        if (!hasBaseEmotions) {
+          baseEmotionsRef.current.set(currentPaintingId, new Set(paintingState.baseEmotions))
+        }
+        
+        if (paintingState.optimisticDeltas) {
+          optimisticCountsRef.current.set(currentPaintingId, paintingState.optimisticDeltas)
+        }
+        
+        setSelectedEmotions(new Set(paintingState.selectedEmotions))
+      } else if (!hasBaseEmotions) {
+        // First time viewing this painting - fetch submission check
+        const sessionState = getOrInitializeSessionState()
+        const sessionId = sessionState.sessionId
+        
+        try {
+          const response = await fetch(`/api/emotions/${currentPaintingId}/submission?session_id=${encodeURIComponent(sessionId)}`, {
+            cache: 'no-store',
+          })
+          
+          if (response.ok) {
+            const data = await response.json() as { hasSubmitted: boolean; previousEmotions?: string[] }
+            const baseEmotionsArray = data.hasSubmitted && data.previousEmotions ? data.previousEmotions : []
+            
+            baseEmotionsRef.current.set(currentPaintingId, new Set(baseEmotionsArray))
+            updatePaintingState(currentPaintingId, baseEmotionsArray, baseEmotionsArray, {})
+            setSelectedEmotions(new Set(baseEmotionsArray))
+          } else {
+            // Error fetching - initialize empty
+            baseEmotionsRef.current.set(currentPaintingId, new Set())
+            updatePaintingState(currentPaintingId, [], [], {})
+            setSelectedEmotions(new Set())
+          }
+        } catch (error) {
+          console.error(`Error loading base emotions for painting ${currentPaintingId}:`, error)
+          baseEmotionsRef.current.set(currentPaintingId, new Set())
+          updatePaintingState(currentPaintingId, [], [], {})
+          setSelectedEmotions(new Set())
+        }
+      } else {
+        // Has base emotions but no session state - initialize from base
+        const baseEmotions = baseEmotionsRef.current.get(currentPaintingId) || new Set<string>()
+        const baseArray = Array.from(baseEmotions)
+        updatePaintingState(currentPaintingId, baseArray, baseArray, {})
+        setSelectedEmotions(new Set(baseEmotions))
       }
       
-      // Restore optimistic deltas from sessionStorage
-      if (paintingState.optimisticDeltas) {
-        optimisticCountsRef.current.set(currentPaintingId, paintingState.optimisticDeltas)
-      }
-      
-      const selectedSet = new Set(paintingState.selectedEmotions)
-      setSelectedEmotions(selectedSet)
-    } else {
-      // Initialize if doesn't exist
-      const baseEmotions = baseEmotionsRef.current.get(currentPaintingId) || new Set<string>()
-      const baseArray = Array.from(baseEmotions)
-      updatePaintingState(currentPaintingId, baseArray, baseArray, {})
-      setSelectedEmotions(new Set(baseEmotions))
+      // Fetch emotion counts (after loading base state)
+      await fetchEmotionCounts(currentPaintingId)
     }
     
-    // Fetch emotion counts (after restoring state so counts are calculated correctly)
-    fetchEmotionCounts(currentPaintingId)
+    loadPaintingData()
   }, [currentPaintingId, fetchEmotionCounts])
 
   // Save all changes to database
