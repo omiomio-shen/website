@@ -132,8 +132,9 @@ export function ArtworkGallery() {
   const [preloadedCounts, setPreloadedCounts] = useState<Record<number, Record<string, number>>>({})
   const [showContent, setShowContent] = useState(false)
   const [thumbnailRect, setThumbnailRect] = useState<DOMRect | null>(null)
-  const [showNav, setShowNav] = useState(true)
+  const [showNav, setShowNav] = useState(false)
   const [isInHeroSection, setIsInHeroSection] = useState(true)
+  const [isHoveringNav, setIsHoveringNav] = useState(false)
   const thumbnailRefs = React.useRef<Map<number, HTMLDivElement>>(new Map())
   const hideNavTimerRef = React.useRef<NodeJS.Timeout | null>(null)
 
@@ -176,10 +177,7 @@ export function ArtworkGallery() {
     }
 
     // In hero section - apply auto-hide behavior
-    const initialTimer = setTimeout(() => {
-      setShowNav(false)
-    }, 1000)
-
+    // Nav starts hidden and only shows on user activity
     const handleUserActivity = () => {
       setShowNav(true)
       
@@ -188,24 +186,26 @@ export function ArtworkGallery() {
         clearTimeout(hideNavTimerRef.current)
       }
       
-      // Set new timer to hide nav after 1 second of inactivity
+      // Set new timer to hide nav after 2 seconds of inactivity
+      // But only if not hovering over the nav
       hideNavTimerRef.current = setTimeout(() => {
-        setShowNav(false)
-      }, 1000)
+        if (!isHoveringNav) {
+          setShowNav(false)
+        }
+      }, 2000)
     }
 
     window.addEventListener('mousemove', handleUserActivity)
     window.addEventListener('scroll', handleUserActivity)
     
     return () => {
-      clearTimeout(initialTimer)
       if (hideNavTimerRef.current) {
         clearTimeout(hideNavTimerRef.current)
       }
       window.removeEventListener('mousemove', handleUserActivity)
       window.removeEventListener('scroll', handleUserActivity)
     }
-  }, [isInHeroSection])
+  }, [isInHeroSection, isHoveringNav])
 
   // Preload all emotion counts on mount for instant modal display
   useEffect(() => {
@@ -328,6 +328,8 @@ export function ArtworkGallery() {
       {/* Floating Navigation Bar */}
       <nav 
         className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-sm"
+        onMouseEnter={() => setIsHoveringNav(true)}
+        onMouseLeave={() => setIsHoveringNav(false)}
         style={{
           opacity: showContent && showNav ? 1 : 0,
           filter: showContent ? 'blur(0px)' : 'blur(10px)',
