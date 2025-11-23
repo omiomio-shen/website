@@ -9,9 +9,11 @@ import { NavButton } from "@/components/nav-button"
 import { WaterSplash } from "@/components/water-splash"
 import { RainControls, type RainSettings } from "@/components/rain-controls"
 import { SplashControls, type SplashSettings } from "@/components/splash-controls"
+import { PageTransitionProvider, usePageTransition } from "@/lib/page-transition"
 
-export default function Home() {
+function HomeContent() {
   const [hoverSection, setHoverSection] = useState<string>("none")
+  const { isTransitioning, startTransition } = usePageTransition()
   const [bottomHeight, setBottomHeight] = useState(0)
   const [showControls, setShowControls] = useState(false)
   const [typedText, setTypedText] = useState("")
@@ -135,7 +137,9 @@ export default function Home() {
 
   return (
     <main
-      className="flex min-h-screen flex-col items-center justify-center"
+      className={`flex min-h-screen flex-col items-center justify-center transition-transform duration-300 ease-out ${
+        isTransitioning ? "page-slide-up" : ""
+      }`}
       style={{ backgroundColor: "#0C0F0E", ...rainStyles }}
     >
       {/* Controls toggle buttons - only visible when secret key is typed */}
@@ -276,7 +280,13 @@ export default function Home() {
           }}
         >
           <div id="bottom-nav-button" className="pointer-events-auto">
-            <NavButton href="/oil-paintings" className="text-left">Oil paintings</NavButton>
+            <NavButton 
+              href="/oil-paintings" 
+              className="text-left"
+              onNavigate={(href) => startTransition(href)}
+            >
+              Oil paintings
+            </NavButton>
           </div>
         </div>
       </div>
@@ -373,5 +383,13 @@ export default function Home() {
         </div>
       </div>
     </main>
+  )
+}
+
+export default function Home() {
+  return (
+    <PageTransitionProvider>
+      <HomeContent />
+    </PageTransitionProvider>
   )
 }
