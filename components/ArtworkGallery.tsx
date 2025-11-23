@@ -377,11 +377,51 @@ export function ArtworkGallery() {
             sizes="100vw"
             priority
           />
+          
+          {/* View Paintings Button */}
+          <div 
+            className="absolute transition-opacity duration-300"
+            style={{
+              top: '50%',
+              left: '33.33%',
+              transform: 'translate(-50%, -50%)',
+              opacity: showContent && showNav ? 1 : 0,
+              pointerEvents: showNav ? 'auto' : 'none'
+            }}
+          >
+            <button
+              onClick={() => {
+                // Scroll to the artwork grid section
+                const artworkGrid = document.getElementById('artwork-grid')
+                if (artworkGrid) {
+                  artworkGrid.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }
+              }}
+              className="group relative flex items-center text-lg text-gray-300 hover:text-white focus:outline-none transition-colors"
+            >
+              <span className="inline-block">View paintings</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="ml-1 h-4 w-4 hidden group-hover:block"
+              >
+                <path d="M5 12h14" />
+                <path d="m12 5 7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Artwork Grid */}
-      <div className="max-w-6xl mx-auto px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-16">
+      <div id="artwork-grid" className="max-w-6xl mx-auto px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-16">
         {artworks.filter(artwork => artwork.id !== 16).map((artwork, index) => (
           <div
             key={artwork.id}
