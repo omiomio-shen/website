@@ -132,7 +132,10 @@ export function ArtworkGallery() {
   const [preloadedCounts, setPreloadedCounts] = useState<Record<number, Record<string, number>>>({})
   const [showContent, setShowContent] = useState(false)
   const [thumbnailRect, setThumbnailRect] = useState<DOMRect | null>(null)
+  const [showNav, setShowNav] = useState(true)
+  const [isInHeroSection, setIsInHeroSection] = useState(true)
   const thumbnailRefs = React.useRef<Map<number, HTMLDivElement>>(new Map())
+  const hideNavTimerRef = React.useRef<NodeJS.Timeout | null>(null)
 
   // Trigger content visibility after delay
   useEffect(() => {
@@ -143,6 +146,66 @@ export function ArtworkGallery() {
     
     return () => clearTimeout(timer)
   }, [])
+
+  // Track if user is in hero section (first viewport height)
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY
+      const viewportHeight = window.innerHeight
+      
+      // Consider in hero section if scrolled less than 80% of viewport height
+      setIsInHeroSection(scrollY < viewportHeight * 0.8)
+    }
+
+    // Initial check
+    handleScroll()
+    
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  // Auto-hide nav bar only when in hero section
+  useEffect(() => {
+    if (!isInHeroSection) {
+      // Past hero section - always show nav
+      setShowNav(true)
+      if (hideNavTimerRef.current) {
+        clearTimeout(hideNavTimerRef.current)
+      }
+      return
+    }
+
+    // In hero section - apply auto-hide behavior
+    const initialTimer = setTimeout(() => {
+      setShowNav(false)
+    }, 1000)
+
+    const handleUserActivity = () => {
+      setShowNav(true)
+      
+      // Clear existing timer
+      if (hideNavTimerRef.current) {
+        clearTimeout(hideNavTimerRef.current)
+      }
+      
+      // Set new timer to hide nav after 1 second of inactivity
+      hideNavTimerRef.current = setTimeout(() => {
+        setShowNav(false)
+      }, 1000)
+    }
+
+    window.addEventListener('mousemove', handleUserActivity)
+    window.addEventListener('scroll', handleUserActivity)
+    
+    return () => {
+      clearTimeout(initialTimer)
+      if (hideNavTimerRef.current) {
+        clearTimeout(hideNavTimerRef.current)
+      }
+      window.removeEventListener('mousemove', handleUserActivity)
+      window.removeEventListener('scroll', handleUserActivity)
+    }
+  }, [isInHeroSection])
 
   // Preload all emotion counts on mount for instant modal display
   useEffect(() => {
@@ -264,10 +327,12 @@ export function ArtworkGallery() {
     <div className="w-full min-h-screen">
       {/* Floating Navigation Bar */}
       <nav 
-        className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200/50 transition-all duration-300 shadow-sm"
+        className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200/50 shadow-sm"
         style={{
-          opacity: showContent ? 1 : 0,
-          filter: showContent ? 'blur(0px)' : 'blur(10px)'
+          opacity: showContent && showNav ? 1 : 0,
+          filter: showContent ? 'blur(0px)' : 'blur(10px)',
+          transform: showNav ? 'translateY(0)' : 'translateY(-100%)',
+          transition: 'opacity 300ms, filter 300ms, transform 300ms'
         }}
       >
         <div className="max-w-6xl mx-auto px-8 py-4">
@@ -301,7 +366,7 @@ export function ArtworkGallery() {
           filter: showContent ? 'blur(0px)' : 'blur(10px)'
         }}
       >
-        <div className="relative w-full aspect-[16/9] max-h-[600px]">
+        <div className="relative w-full h-screen">
           <Image
             src="/images/painting_1.jpg"
             alt="Crimson Dreams - Featured Artwork"
