@@ -20,7 +20,10 @@ interface ArtworkModalProps {
   onClose: () => void
   onNavigate: (index: number) => void
   preloadedCounts: Record<number, Record<string, number>>
+  thumbnailRect: DOMRect | null
 }
+
+type AnimationState = 'entering' | 'entered' | 'exiting' | 'exited'
 
 export function ArtworkModal({
   artworks,
@@ -28,12 +31,15 @@ export function ArtworkModal({
   onClose,
   onNavigate,
   preloadedCounts,
+  thumbnailRect,
 }: ArtworkModalProps) {
   const [selectedEmotions, setSelectedEmotions] = useState<Set<string>>(
     new Set(),
   )
   const [emotionCounts, setEmotionCounts] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(true)
+  const [animationState, setAnimationState] = useState<AnimationState>('entering')
+  const [isClosing, setIsClosing] = useState(false)
   
   const previousPaintingIdRef = useRef<number | null>(null)
   const baseEmotionsRef = useRef<Map<number, Set<string>>>(new Map()) // Original state when session started
@@ -50,6 +56,17 @@ export function ArtworkModal({
     hasClosedRef.current = false
     console.log('[MODAL OPEN] Reset close flag')
   }, [])
+
+  // Animation state machine
+  useEffect(() => {
+    if (animationState === 'entering') {
+      // Trigger transition to 'entered' after a brief delay
+      const timer = setTimeout(() => {
+        setAnimationState('entered')
+      }, 50) // Small delay to ensure initial state is rendered
+      return () => clearTimeout(timer)
+    }
+  }, [animationState])
 
   // Initialize session on mount (lightweight - no API calls)
   useEffect(() => {
@@ -327,17 +344,26 @@ export function ArtworkModal({
 
   // Handle modal close - save to database before closing
   const handleClose = useCallback(async () => {
+    if (isClosing) return // Prevent multiple close calls
+    setIsClosing(true)
+    
     // Save current painting state first
     const selectedArray = Array.from(selectedEmotions)
     const optimisticDeltas = optimisticCountsRef.current.get(currentPaintingId) || {}
     updatePaintingState(currentPaintingId, selectedArray, undefined, optimisticDeltas)
+    
+    // Start exit animation
+    setAnimationState('exiting')
+    
+    // Wait for animation to complete
+    await new Promise(resolve => setTimeout(resolve, 400))
     
     // Save all changes to database
     await saveAllChangesToDatabase()
     
     // Then close the modal
     onClose()
-  }, [currentPaintingId, selectedEmotions, saveAllChangesToDatabase, onClose])
+  }, [currentPaintingId, selectedEmotions, saveAllChangesToDatabase, onClose, isClosing])
 
   const handleEmotionClick = useCallback((emotion: string) => {
     const newSelected = new Set(selectedEmotions)
@@ -402,8 +428,45 @@ export function ArtworkModal({
     return () => window.removeEventListener('keydown', handleKeyDownGlobal)
   }, [handlePrevious, handleNext, handleClose])
 
+  // Calculate transform styles based on animation state - always from/to center
+  const getTransformStyles = (): React.CSSProperties => {
+    // Start scale - small size relative to full modal
+    const startScale = 0.3
+
+    if (animationState === 'entering') {
+      // Start from center at small scale
+      return {
+        transformOrigin: 'center center',
+        transform: `scale(${startScale})`,
+        opacity: 0,
+        transition: 'none',
+      }
+    } else if (animationState === 'entered') {
+      // End at fullscreen
+      return {
+        transformOrigin: 'center center',
+        transform: 'scale(1)',
+        opacity: 1,
+        transition: 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1), opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)',
+      }
+    } else if (animationState === 'exiting') {
+      // Return to center at small scale
+      return {
+        transformOrigin: 'center center',
+        transform: `scale(${startScale})`,
+        opacity: 0,
+        transition: 'transform 400ms cubic-bezier(0.4, 0, 0.2, 1), opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)',
+      }
+    }
+
+    return {}
+  }
+
   return (
-    <div className="fixed inset-0 bg-[#F9FAFB] z-50 flex items-center justify-center">
+    <div 
+      className="fixed inset-0 bg-[#F9FAFB] z-50 flex items-center justify-center"
+      style={getTransformStyles()}
+    >
       {/* Close Button */}
       <button
         onClick={handleClose}

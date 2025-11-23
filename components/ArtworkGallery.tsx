@@ -131,6 +131,8 @@ export function ArtworkGallery() {
   const [activeNav, setActiveNav] = useState('Paintings')
   const [preloadedCounts, setPreloadedCounts] = useState<Record<number, Record<string, number>>>({})
   const [showContent, setShowContent] = useState(false)
+  const [thumbnailRect, setThumbnailRect] = useState<DOMRect | null>(null)
+  const thumbnailRefs = React.useRef<Map<number, HTMLDivElement>>(new Map())
 
   // Trigger content visibility after delay
   useEffect(() => {
@@ -297,7 +299,21 @@ export function ArtworkGallery() {
         {artworks.filter(artwork => artwork.id !== 16).map((artwork, index) => (
           <div
             key={artwork.id}
-            onClick={() => setSelectedIndex(index)}
+            ref={(el) => {
+              if (el) {
+                thumbnailRefs.current.set(index, el)
+              } else {
+                thumbnailRefs.current.delete(index)
+              }
+            }}
+            onClick={() => {
+              const element = thumbnailRefs.current.get(index)
+              if (element) {
+                const rect = element.getBoundingClientRect()
+                setThumbnailRect(rect)
+              }
+              setSelectedIndex(index)
+            }}
             className={`relative w-full aspect-square rounded-full overflow-hidden cursor-pointer group artwork-shadow scale-[0.85] transition-all duration-300`}
             style={{
               opacity: showContent ? 1 : 0,
@@ -325,6 +341,7 @@ export function ArtworkGallery() {
           onClose={() => setSelectedIndex(null)}
           onNavigate={setSelectedIndex}
           preloadedCounts={preloadedCounts}
+          thumbnailRect={thumbnailRect}
         />
       )}
     </div>
