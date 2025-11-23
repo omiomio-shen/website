@@ -261,10 +261,10 @@ export function ArtworkGallery() {
   }, [])
 
   return (
-    <div className="w-full min-h-screen px-8 py-6">
+    <div className="w-full min-h-screen">
       {/* Navigation */}
       <nav 
-        className="max-w-6xl mx-auto mb-24 transition-all duration-300"
+        className="max-w-6xl mx-auto mb-12 pt-6 px-8 transition-all duration-300"
         style={{
           opacity: showContent ? 1 : 0,
           filter: showContent ? 'blur(0px)' : 'blur(10px)'
@@ -294,8 +294,28 @@ export function ArtworkGallery() {
         </div>
       </nav>
 
+      {/* Hero Image - Full Width */}
+      <div 
+        className="w-full mb-24 transition-all duration-300"
+        style={{
+          opacity: showContent ? 1 : 0,
+          filter: showContent ? 'blur(0px)' : 'blur(10px)'
+        }}
+      >
+        <div className="relative w-full aspect-[16/9] max-h-[600px]">
+          <Image
+            src="/images/painting_1.jpg"
+            alt="Crimson Dreams - Featured Artwork"
+            fill
+            className="object-cover"
+            sizes="100vw"
+            priority
+          />
+        </div>
+      </div>
+
       {/* Artwork Grid */}
-      <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-16">
+      <div className="max-w-6xl mx-auto px-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-16">
         {artworks.filter(artwork => artwork.id !== 16).map((artwork, index) => (
           <div
             key={artwork.id}
