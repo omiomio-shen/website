@@ -292,7 +292,9 @@ function HomeContent() {
       </div>
 
       {/* Image Container */}
-      <div className="absolute inset-0 w-full h-full">
+      <div className={`absolute inset-0 w-full h-full transition-opacity duration-200 ${
+        isTransitioning ? 'opacity-0' : 'opacity-100'
+      }`}>
         {/* Blurred background image with grayscale */}
         <div className="absolute inset-0 transition-all duration-300">
           <Image

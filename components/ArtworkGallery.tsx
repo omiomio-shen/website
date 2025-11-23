@@ -130,6 +130,17 @@ export function ArtworkGallery() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [activeNav, setActiveNav] = useState('Paintings')
   const [preloadedCounts, setPreloadedCounts] = useState<Record<number, Record<string, number>>>({})
+  const [showContent, setShowContent] = useState(false)
+
+  // Trigger content visibility after delay
+  useEffect(() => {
+    // Wait for transition to complete (300ms) plus a small delay (200ms)
+    const timer = setTimeout(() => {
+      setShowContent(true)
+    }, 100)
+    
+    return () => clearTimeout(timer)
+  }, [])
 
   // Preload all emotion counts on mount for instant modal display
   useEffect(() => {
@@ -250,7 +261,13 @@ export function ArtworkGallery() {
   return (
     <div className="w-full min-h-screen px-8 py-6">
       {/* Navigation */}
-      <nav className="max-w-6xl mx-auto mb-24">
+      <nav 
+        className="max-w-6xl mx-auto mb-24 transition-all duration-300"
+        style={{
+          opacity: showContent ? 1 : 0,
+          filter: showContent ? 'blur(0px)' : 'blur(10px)'
+        }}
+      >
         <div className="flex items-center justify-center gap-12">
           {['Home', 'Product', 'Paintings'].map((item) => (
             <button
@@ -281,7 +298,13 @@ export function ArtworkGallery() {
           <div
             key={artwork.id}
             onClick={() => setSelectedIndex(index)}
-            className="relative w-full aspect-square rounded-full overflow-hidden cursor-pointer group artwork-shadow scale-[0.85]"
+            className={`relative w-full aspect-square rounded-full overflow-hidden cursor-pointer group artwork-shadow scale-[0.85] transition-all duration-300`}
+            style={{
+              opacity: showContent ? 1 : 0,
+              filter: showContent ? 'blur(0px)' : 'blur(10px)',
+              transform: 'scale(0.85)',
+              transitionDelay: `${index * 50 + 200}ms`
+            }}
           >
             <Image
               src={getThumbnailUrl(artwork.url)}

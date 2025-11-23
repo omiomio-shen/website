@@ -20,7 +20,7 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
     // Wait for animation to complete before navigating
     setTimeout(() => {
       router.push(href)
-    }, 300) // 300ms animation duration
+    }, 200) // 200ms animation duration
   }, [router])
 
   return (
