@@ -262,39 +262,38 @@ export function ArtworkGallery() {
 
   return (
     <div className="w-full min-h-screen">
-      {/* Navigation */}
+      {/* Floating Navigation Bar */}
       <nav 
-        className="max-w-6xl mx-auto mb-12 pt-6 px-8 transition-all duration-300"
+        className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200/50 transition-all duration-300 shadow-sm"
         style={{
           opacity: showContent ? 1 : 0,
           filter: showContent ? 'blur(0px)' : 'blur(10px)'
         }}
       >
-        <div className="flex items-center justify-center gap-12">
-          {['Home', 'Product', 'Paintings'].map((item) => (
-            <button
-              key={item}
-              onClick={() => {
-                if (item === 'Home') {
-                  window.location.href = '/'
-                } else {
-                  setActiveNav(item)
-                }
-              }}
-              className={`relative transition-colors py-2 text-sm ${
-                activeNav === item ? 'text-gray-900' : 'text-gray-500 hover:text-gray-900'
-              }`}
-            >
-              {item}
-              {activeNav === item && (
-                <div className="absolute bottom-[0.0625rem] left-0 right-0 h-px bg-gray-900" />
-              )}
-            </button>
-          ))}
+        <div className="max-w-6xl mx-auto px-8 py-4">
+          <div className="flex items-center justify-center gap-12">
+            {['Home', 'Product', 'Paintings'].map((item) => (
+              <button
+                key={item}
+                onClick={() => {
+                  if (item === 'Home') {
+                    window.location.href = '/'
+                  } else {
+                    setActiveNav(item)
+                  }
+                }}
+                className={`relative transition-colors py-2 text-sm ${
+                  activeNav === item ? 'text-gray-900' : 'text-gray-500 hover:text-gray-900'
+                }`}
+              >
+                {item}
+              </button>
+            ))}
+          </div>
         </div>
       </nav>
-
-      {/* Hero Image - Full Width */}
+      
+      {/* Hero Image - Full Width, starts at top */}
       <div 
         className="w-full mb-24 transition-all duration-300"
         style={{
