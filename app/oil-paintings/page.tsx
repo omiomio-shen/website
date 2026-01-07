@@ -28,7 +28,19 @@ export default function OilPaintingsPage() {
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [showNav, setShowNav] = useState(false)
   const [isHoveringNav, setIsHoveringNav] = useState(false)
+  const [isPortraitViewport, setIsPortraitViewport] = useState(false)
   const hideNavTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Viewport orientation detection
+  useEffect(() => {
+    const checkViewport = () => {
+      setIsPortraitViewport(window.innerHeight > window.innerWidth)
+    }
+    
+    checkViewport() // Initial check
+    window.addEventListener('resize', checkViewport)
+    return () => window.removeEventListener('resize', checkViewport)
+  }, [])
 
   const goToPrevious = useCallback(() => {
     if (isTransitioning) return
@@ -91,6 +103,19 @@ export default function OilPaintingsPage() {
 
   const currentArtwork = artworks[currentIndex]
 
+  // Determine object-fit based on viewport and painting orientation
+  const getObjectFit = (paintingOrientation: 'landscape' | 'portrait') => {
+    const isPaintingLandscape = paintingOrientation === 'landscape'
+    
+    if (isPortraitViewport) {
+      // Portrait viewport: landscape paintings fit, portrait paintings cover
+      return isPaintingLandscape ? 'object-contain' : 'object-cover'
+    } else {
+      // Landscape/square viewport: landscape paintings cover, portrait paintings fit
+      return isPaintingLandscape ? 'object-cover' : 'object-contain'
+    }
+  }
+
   return (
     <div className="w-full h-screen bg-[#0C0F0E] overflow-hidden relative">
       {/* Blurred Background - Same painting, covers full page */}
@@ -123,7 +148,7 @@ export default function OilPaintingsPage() {
           src={currentArtwork.url}
           alt={currentArtwork.title}
           fill
-          className={currentArtwork.orientation === 'landscape' ? "object-cover" : "object-contain"}
+          className={getObjectFit(currentArtwork.orientation)}
           sizes="100vw"
           priority
         />
