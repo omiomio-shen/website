@@ -93,6 +93,26 @@ export default function OilPaintingsPage() {
 
   return (
     <div className="w-full h-screen bg-[#0C0F0E] overflow-hidden relative">
+      {/* Blurred Background - Same painting, covers full page */}
+      <div
+        className={`absolute inset-0 transition-opacity duration-300 ${
+          isTransitioning ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        <Image
+          src={currentArtwork.url}
+          alt=""
+          fill
+          className="object-cover"
+          style={{
+            filter: "blur(24px) grayscale(60%)",
+            transform: "scale(1.1)",
+          }}
+          sizes="100vw"
+          priority
+        />
+      </div>
+
       {/* Full-Screen Painting */}
       <div
         className={`absolute inset-0 transition-opacity duration-300 ${
