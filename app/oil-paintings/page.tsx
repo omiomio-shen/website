@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 
@@ -26,6 +26,9 @@ const artworks = [
 export default function OilPaintingsPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [showNav, setShowNav] = useState(false)
+  const [isHoveringNav, setIsHoveringNav] = useState(false)
+  const hideNavTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const goToPrevious = useCallback(() => {
     if (isTransitioning) return
@@ -55,33 +58,72 @@ export default function OilPaintingsPage() {
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [goToPrevious, goToNext])
 
+  // Auto-hide nav bar on inactivity
+  useEffect(() => {
+    const handleUserActivity = () => {
+      setShowNav(true)
+      
+      if (hideNavTimerRef.current) {
+        clearTimeout(hideNavTimerRef.current)
+      }
+      
+      hideNavTimerRef.current = setTimeout(() => {
+        if (!isHoveringNav) {
+          setShowNav(false)
+        }
+      }, 2500)
+    }
+
+    window.addEventListener('mousemove', handleUserActivity)
+    window.addEventListener('keydown', handleUserActivity)
+    
+    // Show nav initially
+    handleUserActivity()
+    
+    return () => {
+      if (hideNavTimerRef.current) {
+        clearTimeout(hideNavTimerRef.current)
+      }
+      window.removeEventListener('mousemove', handleUserActivity)
+      window.removeEventListener('keydown', handleUserActivity)
+    }
+  }, [isHoveringNav])
+
   const currentArtwork = artworks[currentIndex]
 
   return (
-    <div className="w-full h-screen bg-[#0C0F0E] flex flex-col overflow-hidden">
-      {/* Painting Container */}
-      <div className="flex-1 relative">
-        <div
-          className={`absolute inset-0 transition-opacity duration-300 ${
-            isTransitioning ? "opacity-0" : "opacity-100"
-          }`}
-        >
-          <Image
-            src={currentArtwork.url}
-            alt={currentArtwork.title}
-            fill
-            className="object-contain"
-            sizes="100vw"
-            priority
-          />
-        </div>
+    <div className="w-full h-screen bg-[#0C0F0E] overflow-hidden relative">
+      {/* Full-Screen Painting */}
+      <div
+        className={`absolute inset-0 transition-opacity duration-300 ${
+          isTransitioning ? "opacity-0" : "opacity-100"
+        }`}
+      >
+        <Image
+          src={currentArtwork.url}
+          alt={currentArtwork.title}
+          fill
+          className="object-contain"
+          sizes="100vw"
+          priority
+        />
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="flex items-center justify-center gap-12 py-6 bg-black/30 backdrop-blur-sm">
+      {/* Overlaid Navigation */}
+      <nav 
+        className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-16 py-8 transition-all duration-300"
+        onMouseEnter={() => setIsHoveringNav(true)}
+        onMouseLeave={() => setIsHoveringNav(false)}
+        style={{
+          opacity: showNav ? 1 : 0,
+          transform: showNav ? 'translateY(0)' : 'translateY(20px)',
+          pointerEvents: showNav ? 'auto' : 'none',
+          background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)',
+        }}
+      >
         <button
           onClick={goToPrevious}
-          className="text-white/60 hover:text-white transition-colors text-xl font-light px-4 py-2"
+          className="text-white/70 hover:text-white transition-colors text-2xl font-extralight px-6 py-3"
           aria-label="Previous painting"
         >
           ←
@@ -89,19 +131,27 @@ export default function OilPaintingsPage() {
 
         <Link
           href="/"
-          className="text-white/60 hover:text-white transition-colors text-sm tracking-widest uppercase"
+          className="text-white/70 hover:text-white transition-colors text-sm tracking-[0.3em] uppercase font-light"
         >
           Home
         </Link>
 
         <button
           onClick={goToNext}
-          className="text-white/60 hover:text-white transition-colors text-xl font-light px-4 py-2"
+          className="text-white/70 hover:text-white transition-colors text-2xl font-extralight px-6 py-3"
           aria-label="Next painting"
         >
           →
         </button>
       </nav>
+
+      {/* Painting Counter */}
+      <div 
+        className="absolute top-6 right-6 text-white/50 text-sm tracking-widest font-light transition-opacity duration-300"
+        style={{ opacity: showNav ? 1 : 0 }}
+      >
+        {currentIndex + 1} / {artworks.length}
+      </div>
     </div>
   )
 }
