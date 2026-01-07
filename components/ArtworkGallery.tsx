@@ -1,17 +1,11 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ArtworkModal } from './ArtworkModal'
 import Image from 'next/image'
-import {
-  getAllSessionPaintings,
-  clearSessionState,
-  getOrInitializeSessionState,
-} from '@/lib/session-storage'
 
 // Helper function to convert image URL to thumbnail version
 function getThumbnailUrl(url: string): string {
-  // Extract the base name and extension
   const lastSlash = url.lastIndexOf('/')
   const filename = url.substring(lastSlash + 1)
   const lastDot = filename.lastIndexOf('.')
@@ -23,7 +17,6 @@ function getThumbnailUrl(url: string): string {
     return url.substring(0, lastSlash + 1) + baseName + '_thumbnail.jpeg'
   }
   
-  // Insert "_thumbnail" before the extension
   return url.substring(0, lastSlash + 1) + baseName + '_thumbnail' + extension
 }
 
@@ -32,104 +25,103 @@ const artworks = [
     id: 1,
     url: '/images/painting_1.jpg',
     title: 'Crimson Dreams',
-    emotions: ['Calm', 'Mysterious', 'Nostalgic'],
+    orientation: 'landscape' as const,
   },
   {
     id: 2,
     url: '/images/painting_2.jpg',
     title: 'Ocean Whispers',
-    emotions: ['Solitary', 'Accepting'],
+    orientation: 'portrait' as const,
   },
   {
     id: 3,
     url: '/images/painting_3.jpg',
     title: 'Golden Horizon',
-    emotions: ['Hopeful', 'Curious', 'Warm'],
+    orientation: 'portrait' as const,
   },
   {
     id: 4,
     url: '/images/painting_4.jpg',
     title: 'Midnight Bloom',
-    emotions: ['Wondering', 'Mysterious'],
+    orientation: 'landscape' as const,
   },
   {
     id: 5,
     url: '/images/painting_5.jpg',
     title: 'Summer Glow',
-    emotions: ['Joyful', 'Energetic', 'Loving'],
+    orientation: 'portrait' as const,
   },
   {
     id: 6,
     url: '/images/painting_6.jpg',
     title: 'Forest Song',
-    emotions: ['Reflective', 'Resilient'],
+    orientation: 'portrait' as const,
   },
   {
     id: 7,
     url: '/images/painting_7.jpg',
     title: 'Velvet Night',
-    emotions: ['Contemplative', 'Intimate'],
+    orientation: 'portrait' as const,
   },
   {
     id: 8,
     url: '/images/painting_8.jpg',
     title: 'Desert Bloom',
-    emotions: ['Romantic', 'Harmonious'],
+    orientation: 'landscape' as const,
   },
   {
     id: 9,
     url: '/images/painting_9.jpg',
     title: 'Azure Dreams',
-    emotions: ['Relaxed', 'Connected'],
+    orientation: 'portrait' as const,
   },
   {
     id: 10,
     url: '/images/painting_10.jpg',
     title: 'Autumn Reverie',
-    emotions: ['Chaotic', 'Unsettling'],
+    orientation: 'portrait' as const,
   },
   {
     id: 11,
     url: '/images/painting_11.jpg',
     title: 'Dawn Breaking',
-    emotions: ['Connected', 'Warm'],
-  },
-  {
-    id: 12,
-    url: '/images/painting_12.jpg',
-    title: 'Ethereal Mist',
-    emotions: ['Playful', 'Quirky'],
-  },
-  {
-    id: 13,
-    url: '/images/painting_13.jpg',
-    title: 'Twilight Serenade',
-    emotions: ['Energetic', 'Optimistic'],
+    orientation: 'landscape' as const,
   },
   {
     id: 14,
     url: '/images/painting_14.jpg',
     title: 'Verdant Path',
-    emotions: ['Reflective', 'Warm'],
+    orientation: 'landscape' as const,
+  },
+  {
+    id: 12,
+    url: '/images/painting_12.jpg',
+    title: 'Ethereal Mist',
+    orientation: 'portrait' as const,
+  },
+  {
+    id: 13,
+    url: '/images/painting_13.jpg',
+    title: 'Twilight Serenade',
+    orientation: 'portrait' as const,
   },
   {
     id: 15,
     url: '/images/painting_15.jpg',
     title: 'Crimson Tide',
-    emotions: ['Happy', 'Hopeful'],
+    orientation: 'portrait' as const,
   },
   {
     id: 16,
     url: '/images/painting_16.jpg',
     title: 'Starlight Canvas',
-    emotions: ['Passionate', 'Curious'],
+    orientation: 'landscape' as const,
   },
 ]
 
 export function ArtworkGallery() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [activeNav, setActiveNav] = useState('Paintings')
-  const [preloadedCounts, setPreloadedCounts] = useState<Record<number, Record<string, number>>>({})
   const [showContent, setShowContent] = useState(false)
   const [thumbnailRect, setThumbnailRect] = useState<DOMRect | null>(null)
   const [showNav, setShowNav] = useState(false)
@@ -140,7 +132,6 @@ export function ArtworkGallery() {
 
   // Trigger content visibility after delay
   useEffect(() => {
-    // Wait for transition to complete (300ms) plus a small delay (200ms)
     const timer = setTimeout(() => {
       setShowContent(true)
     }, 100)
@@ -154,11 +145,9 @@ export function ArtworkGallery() {
       const scrollY = window.scrollY
       const viewportHeight = window.innerHeight
       
-      // Consider in hero section if scrolled less than 80% of viewport height
       setIsInHeroSection(scrollY < viewportHeight * 0.8)
     }
 
-    // Initial check
     handleScroll()
     
     window.addEventListener('scroll', handleScroll)
@@ -168,7 +157,6 @@ export function ArtworkGallery() {
   // Auto-hide nav bar only when in hero section
   useEffect(() => {
     if (!isInHeroSection) {
-      // Past hero section - always show nav
       setShowNav(true)
       if (hideNavTimerRef.current) {
         clearTimeout(hideNavTimerRef.current)
@@ -176,18 +164,13 @@ export function ArtworkGallery() {
       return
     }
 
-    // In hero section - apply auto-hide behavior
-    // Nav starts hidden and only shows on user activity
     const handleUserActivity = () => {
       setShowNav(true)
       
-      // Clear existing timer
       if (hideNavTimerRef.current) {
         clearTimeout(hideNavTimerRef.current)
       }
       
-      // Set new timer to hide nav after 2 seconds of inactivity
-      // But only if not hovering over the nav
       hideNavTimerRef.current = setTimeout(() => {
         if (!isHoveringNav) {
           setShowNav(false)
@@ -206,122 +189,6 @@ export function ArtworkGallery() {
       window.removeEventListener('scroll', handleUserActivity)
     }
   }, [isInHeroSection, isHoveringNav])
-
-  // Preload all emotion counts on mount for instant modal display
-  useEffect(() => {
-    const preloadEmotionCounts = async () => {
-      console.log('[PRELOAD] Starting to preload emotion counts for all paintings...')
-      const startTime = performance.now()
-      
-      // Fetch all counts in parallel
-      const fetchPromises = artworks.map(async (artwork) => {
-        try {
-          const random = Math.random().toString(36).substring(7)
-          const timestamp = Date.now()
-          const response = await fetch(`/api/emotions/${artwork.id}?t=${timestamp}&r=${random}`, {
-            method: 'GET',
-            cache: 'no-store',
-            headers: {
-              'Cache-Control': 'no-store, no-cache, must-revalidate',
-              'Pragma': 'no-cache',
-            },
-          })
-          
-          if (response.ok) {
-            const data = await response.json()
-            return { paintingId: artwork.id, counts: data.counts || {} }
-          }
-          
-          return { paintingId: artwork.id, counts: {} }
-        } catch (error) {
-          console.error(`[PRELOAD] Error fetching counts for painting ${artwork.id}:`, error)
-          return { paintingId: artwork.id, counts: {} }
-        }
-      })
-
-      const results = await Promise.all(fetchPromises)
-      
-      // Convert array to map
-      const countsMap: Record<number, Record<string, number>> = {}
-      results.forEach(({ paintingId, counts }) => {
-        countsMap[paintingId] = counts
-      })
-      
-      setPreloadedCounts(countsMap)
-      
-      const endTime = performance.now()
-      console.log(`[PRELOAD] Finished preloading ${results.length} paintings in ${Math.round(endTime - startTime)}ms`)
-    }
-
-    preloadEmotionCounts()
-  }, [])
-
-  // Backup: Save on tab close (in case user closes tab while modal is open)
-  // Primary save happens when modal closes
-  useEffect(() => {
-    const handlePageHide = () => {
-      const sessionPaintings = getAllSessionPaintings()
-      const sessionState = getOrInitializeSessionState()
-      const sessionId = sessionState.sessionId
-      
-      if (!sessionId || Object.keys(sessionPaintings).length === 0) {
-        return
-      }
-      
-      console.log('[TAB CLOSE BACKUP] Saving remaining changes...')
-      
-      // Use keepalive fetch for backup save
-      for (const [paintingIdStr, paintingState] of Object.entries(sessionPaintings)) {
-        const paintingId = parseInt(paintingIdStr)
-        if (isNaN(paintingId)) continue
-
-        const baseEmotions = new Set(paintingState.baseEmotions || [])
-        const currentEmotions = new Set(paintingState.selectedEmotions || [])
-        const selectedArray = Array.from(currentEmotions)
-
-        const allEmotions = new Set([...baseEmotions, ...currentEmotions])
-        const deltas: Record<string, number> = {}
-
-        for (const emotion of allEmotions) {
-          const wasSelected = baseEmotions.has(emotion)
-          const isSelected = currentEmotions.has(emotion)
-          
-          if (wasSelected && !isSelected) {
-            deltas[emotion] = -1
-          } else if (!wasSelected && isSelected) {
-            deltas[emotion] = 1
-          }
-        }
-
-        const hasChanges = Object.keys(deltas).length > 0
-
-        if (hasChanges) {
-          fetch(`/api/emotions/${paintingId}/submission`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ selectedEmotions: selectedArray, sessionId }),
-            keepalive: true,
-          }).catch(console.error)
-
-          for (const [emotion, delta] of Object.entries(deltas)) {
-            if (delta !== 0) {
-              fetch(`/api/emotions/${paintingId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ emotion, delta, ipAddress: 'client' }),
-                keepalive: true,
-              }).catch(console.error)
-            }
-          }
-        }
-      }
-
-      clearSessionState()
-    }
-
-    window.addEventListener('pagehide', handlePageHide)
-    return () => window.removeEventListener('pagehide', handlePageHide)
-  }, [])
 
   return (
     <div className="w-full min-h-screen">
@@ -391,7 +258,6 @@ export function ArtworkGallery() {
           >
             <button
               onClick={() => {
-                // Scroll to the artwork grid section
                 const artworkGrid = document.getElementById('artwork-grid')
                 if (artworkGrid) {
                   artworkGrid.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -466,11 +332,9 @@ export function ArtworkGallery() {
           currentIndex={selectedIndex}
           onClose={() => setSelectedIndex(null)}
           onNavigate={setSelectedIndex}
-          preloadedCounts={preloadedCounts}
           thumbnailRect={thumbnailRect}
         />
       )}
     </div>
   )
 }
-
