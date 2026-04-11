@@ -147,39 +147,39 @@ export default function OilPaintingsPage() {
       </div>
 
       {/* Overlaid Navigation */}
-      <nav 
-        className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-3 py-8 transition-all duration-300"
+      <nav
+        className="absolute bottom-0 left-0 right-0 flex items-center justify-center py-8"
         onMouseEnter={() => setIsHoveringNav(true)}
         onMouseLeave={() => setIsHoveringNav(false)}
-        style={{
-          opacity: showNav ? 1 : 0,
-          transform: showNav ? 'translateY(0)' : 'translateY(20px)',
-          pointerEvents: showNav ? 'auto' : 'none',
-          background: 'linear-gradient(to top, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0) 100%)',
-        }}
+        style={{ pointerEvents: showNav ? 'auto' : 'none' }}
       >
-        <button
-          onClick={goToPrevious}
-          className="text-gray-300 hover:text-white transition-colors px-2 py-3"
-          aria-label="Previous painting"
+        <div
+          className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-full px-6 py-2 transition-opacity duration-300"
+          style={{ opacity: showNav ? 1 : 0 }}
         >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
+          <button
+            onClick={goToPrevious}
+            className="text-gray-300 hover:text-white transition-colors px-1"
+            aria-label="Previous painting"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
 
-        <Link
-          href="/"
-          className="text-gray-300 hover:text-white transition-colors text-lg"
-        >
-          Home
-        </Link>
+          <Link
+            href="/"
+            className="text-gray-300 hover:text-white transition-colors text-lg"
+          >
+            Home
+          </Link>
 
-        <button
-          onClick={goToNext}
-          className="text-gray-300 hover:text-white transition-colors px-2 py-3"
-          aria-label="Next painting"
-        >
-          <ArrowRight className="h-4 w-4" />
-        </button>
+          <button
+            onClick={goToNext}
+            className="text-gray-300 hover:text-white transition-colors px-1"
+            aria-label="Next painting"
+          >
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
       </nav>
 
       {/* Painting Counter */}
