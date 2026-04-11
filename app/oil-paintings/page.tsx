@@ -88,8 +88,7 @@ export default function OilPaintingsPage() {
     }
 
     window.addEventListener('mousemove', handleUserActivity)
-    window.addEventListener('keydown', handleUserActivity)
-    
+
     // Show nav initially
     handleUserActivity()
     
@@ -98,7 +97,6 @@ export default function OilPaintingsPage() {
         clearTimeout(hideNavTimerRef.current)
       }
       window.removeEventListener('mousemove', handleUserActivity)
-      window.removeEventListener('keydown', handleUserActivity)
     }
   }, [isHoveringNav])
 
