@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { ArrowLeft, ArrowRight } from "lucide-react"
 
 const artworks = [
   { id: 1, url: '/images/painting_1.jpg', title: 'Crimson Dreams', orientation: 'landscape' as const },
@@ -156,7 +157,7 @@ export default function OilPaintingsPage() {
 
       {/* Overlaid Navigation */}
       <nav 
-        className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-16 py-8 transition-all duration-300"
+        className="absolute bottom-0 left-0 right-0 flex items-center justify-center gap-3 py-8 transition-all duration-300"
         onMouseEnter={() => setIsHoveringNav(true)}
         onMouseLeave={() => setIsHoveringNav(false)}
         style={{
@@ -168,10 +169,10 @@ export default function OilPaintingsPage() {
       >
         <button
           onClick={goToPrevious}
-          className="text-gray-300 hover:text-white transition-colors text-lg px-6 py-3"
+          className="text-gray-300 hover:text-white transition-colors px-2 py-3"
           aria-label="Previous painting"
         >
-          ←
+          <ArrowLeft className="h-4 w-4" />
         </button>
 
         <Link
@@ -183,10 +184,10 @@ export default function OilPaintingsPage() {
 
         <button
           onClick={goToNext}
-          className="text-gray-300 hover:text-white transition-colors text-lg px-6 py-3"
+          className="text-gray-300 hover:text-white transition-colors px-2 py-3"
           aria-label="Next painting"
         >
-          →
+          <ArrowRight className="h-4 w-4" />
         </button>
       </nav>
 
