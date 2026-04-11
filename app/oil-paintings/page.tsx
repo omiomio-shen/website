@@ -168,7 +168,7 @@ export default function OilPaintingsPage() {
       >
         <button
           onClick={goToPrevious}
-          className="text-white/70 hover:text-white transition-colors text-2xl font-extralight px-6 py-3"
+          className="text-gray-300 hover:text-white transition-colors text-lg px-6 py-3"
           aria-label="Previous painting"
         >
           ←
@@ -176,14 +176,14 @@ export default function OilPaintingsPage() {
 
         <Link
           href="/"
-          className="text-white/70 hover:text-white transition-colors text-sm tracking-[0.3em] uppercase font-light"
+          className="text-gray-300 hover:text-white transition-colors text-lg"
         >
           Home
         </Link>
 
         <button
           onClick={goToNext}
-          className="text-white/70 hover:text-white transition-colors text-2xl font-extralight px-6 py-3"
+          className="text-gray-300 hover:text-white transition-colors text-lg px-6 py-3"
           aria-label="Next painting"
         >
           →
