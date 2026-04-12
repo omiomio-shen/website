@@ -8,13 +8,12 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 const artworks = [
   { id: 1, url: '/images/painting_1.jpg', title: 'Crimson Dreams', orientation: 'landscape' as const },
   { id: 2, url: '/images/painting_8.jpg', title: 'Desert Bloom', orientation: 'landscape' as const },
-  { id: 3, url: '/images/painting_4.jpg', title: 'Midnight Bloom', orientation: 'landscape' as const },
-  { id: 4, url: '/images/painting_2.jpg', title: 'Ocean Whispers', orientation: 'portrait' as const },
-  { id: 5, url: '/images/painting_3.jpg', title: 'Golden Horizon', orientation: 'portrait' as const },
-  { id: 6, url: '/images/painting_5.jpg', title: 'Summer Glow', orientation: 'portrait' as const },
-  { id: 7, url: '/images/painting_6.jpg', title: 'Forest Song', orientation: 'portrait' as const },
-  { id: 8, url: '/images/painting_7.jpg', title: 'Velvet Night', orientation: 'portrait' as const },
-  { id: 9, url: '/images/painting_9.jpg', title: 'Azure Dreams', orientation: 'portrait' as const },
+  { id: 3, url: '/images/painting_2.jpg', title: 'Ocean Whispers', orientation: 'portrait' as const },
+  { id: 4, url: '/images/painting_3.jpg', title: 'Golden Horizon', orientation: 'portrait' as const },
+  { id: 5, url: '/images/painting_5.jpg', title: 'Summer Glow', orientation: 'portrait' as const },
+  { id: 6, url: '/images/painting_6.jpg', title: 'Forest Song', orientation: 'portrait' as const },
+  { id: 7, url: '/images/painting_7.jpg', title: 'Velvet Night', orientation: 'portrait' as const },
+  { id: 8, url: '/images/painting_9.jpg', title: 'Azure Dreams', orientation: 'portrait' as const },
 ]
 
 export default function OilPaintingsPage() {
