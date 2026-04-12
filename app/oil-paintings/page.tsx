@@ -38,15 +38,19 @@ export default function OilPaintingsPage() {
   const goToPrevious = useCallback(() => {
     if (isTransitioning) return
     setIsTransitioning(true)
-    setCurrentIndex((prev) => (prev === 0 ? artworks.length - 1 : prev - 1))
-    setTimeout(() => setIsTransitioning(false), 300)
+    setTimeout(() => {
+      setCurrentIndex((prev) => (prev === 0 ? artworks.length - 1 : prev - 1))
+      setIsTransitioning(false)
+    }, 500)
   }, [isTransitioning])
 
   const goToNext = useCallback(() => {
     if (isTransitioning) return
     setIsTransitioning(true)
-    setCurrentIndex((prev) => (prev === artworks.length - 1 ? 0 : prev + 1))
-    setTimeout(() => setIsTransitioning(false), 300)
+    setTimeout(() => {
+      setCurrentIndex((prev) => (prev === artworks.length - 1 ? 0 : prev + 1))
+      setIsTransitioning(false)
+    }, 500)
   }, [isTransitioning])
 
   // Keyboard navigation
@@ -111,7 +115,7 @@ export default function OilPaintingsPage() {
     <div className="w-full h-screen bg-[#0C0F0E] overflow-hidden relative">
       {/* Blurred Background - Same painting, covers full page */}
       <div
-        className={`absolute inset-0 transition-opacity duration-300 ${
+        className={`absolute inset-0 transition-opacity duration-500 ${
           isTransitioning ? "opacity-0" : "opacity-100"
         }`}
       >
@@ -131,7 +135,7 @@ export default function OilPaintingsPage() {
 
       {/* Full-Screen Painting */}
       <div
-        className={`absolute inset-0 transition-opacity duration-300 ${
+        className={`absolute inset-0 transition-opacity duration-500 ${
           isTransitioning ? "opacity-0" : "opacity-100"
         }`}
       >
@@ -153,7 +157,7 @@ export default function OilPaintingsPage() {
         style={{ pointerEvents: showNav ? 'auto' : 'none' }}
       >
         <div
-          className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-full px-6 py-2 transition-opacity duration-300"
+          className="flex items-center gap-3 bg-white/10 backdrop-blur-md rounded-full px-6 py-2 transition-opacity duration-500"
           style={{ opacity: showNav ? 1 : 0 }}
         >
           <button
@@ -183,7 +187,7 @@ export default function OilPaintingsPage() {
 
       {/* Painting Counter */}
       <div 
-        className="absolute top-6 right-6 text-white/50 text-sm tracking-widest font-light transition-opacity duration-300"
+        className="absolute top-6 right-6 text-white/50 text-sm tracking-widest font-light transition-opacity duration-500"
         style={{ opacity: showNav ? 1 : 0 }}
       >
         {currentIndex + 1} / {artworks.length}
