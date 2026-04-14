@@ -136,10 +136,11 @@ function HomeContent() {
   } as React.CSSProperties
 
   return (
+    <div className="h-screen overflow-hidden">
+      {/* Sliding container: home (100vh) + painting preview (100vh) stacked vertically */}
+      <div className={isTransitioning ? "page-slide-up" : ""}>
     <main
-      className={`flex min-h-screen flex-col items-center justify-center transition-transform duration-300 ease-out ${
-        isTransitioning ? "page-slide-up" : ""
-      }`}
+      className="relative flex h-screen flex-col items-center justify-center"
       style={{ backgroundColor: "#0C0F0E", ...rainStyles }}
     >
       {/* Controls toggle buttons - only visible when secret key is typed */}
@@ -292,9 +293,7 @@ function HomeContent() {
       </div>
 
       {/* Image Container */}
-      <div className={`absolute inset-0 w-full h-full transition-opacity duration-200 ${
-        isTransitioning ? 'opacity-0' : 'opacity-100'
-      }`}>
+      <div className="absolute inset-0 w-full h-full">
         {/* Blurred background image with grayscale */}
         <div className="absolute inset-0 transition-all duration-300">
           <Image
@@ -385,6 +384,36 @@ function HomeContent() {
         </div>
       </div>
     </main>
+
+    {/* First painting preview — sits directly below, slides up together with home page */}
+    <div className="h-screen relative bg-[#0C0F0E] overflow-hidden">
+      {/* Blurred background */}
+      <div className="absolute inset-0">
+        <Image
+          src="/images/painting_1.jpg"
+          alt=""
+          fill
+          className="object-cover"
+          style={{ filter: "blur(24px) grayscale(60%)", transform: "scale(1.1)" }}
+          sizes="100vw"
+          priority
+        />
+      </div>
+      {/* Main painting */}
+      <div className="absolute inset-0">
+        <Image
+          src="/images/painting_1.jpg"
+          alt=""
+          fill
+          className="object-cover"
+          sizes="100vw"
+          priority
+        />
+      </div>
+    </div>
+
+      </div>{/* end sliding container */}
+    </div>
   )
 }
 

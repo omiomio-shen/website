@@ -16,11 +16,11 @@ export function PageTransitionProvider({ children }: { children: ReactNode }) {
 
   const startTransition = useCallback((href: string) => {
     setIsTransitioning(true)
-    
+
     // Wait for animation to complete before navigating
     setTimeout(() => {
       router.push(href)
-    }, 200) // 200ms animation duration
+    }, 650) // match slide animation duration
   }, [router])
 
   return (

@@ -95,17 +95,17 @@
 }
 
 /* Page transition animation */
-@keyframes slideLeft {
+@keyframes slideUp {
   0% {
-    transform: translateX(0);
+    transform: translateY(0);
   }
   100% {
-    transform: translateX(-100vw);
+    transform: translateY(-100vh);
   }
 }
 
 .page-slide-up {
-  animation: slideLeft 200ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+  animation: slideUp 650ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
 }
 
 .animate-blink {
