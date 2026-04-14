@@ -18,40 +18,58 @@ const artworks = [
 
 export default function OilPaintingsPage() {
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [nextIndex, setNextIndex] = useState<number | null>(null)
+  const [showNext, setShowNext] = useState(false)
   const [showNav, setShowNav] = useState(false)
   const [isHoveringNav, setIsHoveringNav] = useState(false)
   const [isPortraitViewport, setIsPortraitViewport] = useState(false)
   const hideNavTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const transitioningRef = useRef(false)
+  const currentIndexRef = useRef(currentIndex)
+
+  useEffect(() => {
+    currentIndexRef.current = currentIndex
+  }, [currentIndex])
 
   // Viewport orientation detection
   useEffect(() => {
     const checkViewport = () => {
       setIsPortraitViewport(window.innerHeight > window.innerWidth)
     }
-    
-    checkViewport() // Initial check
+
+    checkViewport()
     window.addEventListener('resize', checkViewport)
     return () => window.removeEventListener('resize', checkViewport)
   }, [])
 
-  const goToPrevious = useCallback(() => {
-    if (isTransitioning) return
-    setIsTransitioning(true)
+  const navigate = useCallback((targetIndex: number) => {
+    if (transitioningRef.current) return
+    transitioningRef.current = true
+    // Mount the next image at opacity-0, then trigger the fade-in on the next two frames
+    // (double rAF ensures the element has painted at opacity-0 before the transition starts)
+    setNextIndex(targetIndex)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setShowNext(true)
+      })
+    })
     setTimeout(() => {
-      setCurrentIndex((prev) => (prev === 0 ? artworks.length - 1 : prev - 1))
-      setIsTransitioning(false)
+      setCurrentIndex(targetIndex)
+      setNextIndex(null)
+      setShowNext(false)
+      transitioningRef.current = false
     }, 500)
-  }, [isTransitioning])
+  }, [])
+
+  const goToPrevious = useCallback(() => {
+    const prev = currentIndexRef.current
+    navigate(prev === 0 ? artworks.length - 1 : prev - 1)
+  }, [navigate])
 
   const goToNext = useCallback(() => {
-    if (isTransitioning) return
-    setIsTransitioning(true)
-    setTimeout(() => {
-      setCurrentIndex((prev) => (prev === artworks.length - 1 ? 0 : prev + 1))
-      setIsTransitioning(false)
-    }, 500)
-  }, [isTransitioning])
+    const prev = currentIndexRef.current
+    navigate(prev === artworks.length - 1 ? 0 : prev + 1)
+  }, [navigate])
 
   // Keyboard navigation
   useEffect(() => {
@@ -71,11 +89,11 @@ export default function OilPaintingsPage() {
   useEffect(() => {
     const handleUserActivity = () => {
       setShowNav(true)
-      
+
       if (hideNavTimerRef.current) {
         clearTimeout(hideNavTimerRef.current)
       }
-      
+
       hideNavTimerRef.current = setTimeout(() => {
         if (!isHoveringNav) {
           setShowNav(false)
@@ -85,9 +103,8 @@ export default function OilPaintingsPage() {
 
     window.addEventListener('mousemove', handleUserActivity)
 
-    // Show nav initially
     handleUserActivity()
-    
+
     return () => {
       if (hideNavTimerRef.current) {
         clearTimeout(hideNavTimerRef.current)
@@ -101,24 +118,18 @@ export default function OilPaintingsPage() {
   // Determine object-fit based on viewport and painting orientation
   const getObjectFit = (paintingOrientation: 'landscape' | 'portrait') => {
     const isPaintingLandscape = paintingOrientation === 'landscape'
-    
+
     if (isPortraitViewport) {
-      // Portrait viewport: landscape paintings fit, portrait paintings cover
       return isPaintingLandscape ? 'object-contain' : 'object-cover'
     } else {
-      // Landscape/square viewport: landscape paintings cover, portrait paintings fit
       return isPaintingLandscape ? 'object-cover' : 'object-contain'
     }
   }
 
   return (
     <div className="w-full h-screen bg-[#0C0F0E] overflow-hidden relative">
-      {/* Blurred Background - Same painting, covers full page */}
-      <div
-        className={`absolute inset-0 transition-opacity duration-500 ${
-          isTransitioning ? "opacity-0" : "opacity-100"
-        }`}
-      >
+      {/* Blurred Background - current painting */}
+      <div className="absolute inset-0">
         <Image
           src={currentArtwork.url}
           alt=""
@@ -133,12 +144,8 @@ export default function OilPaintingsPage() {
         />
       </div>
 
-      {/* Full-Screen Painting */}
-      <div
-        className={`absolute inset-0 transition-opacity duration-500 ${
-          isTransitioning ? "opacity-0" : "opacity-100"
-        }`}
-      >
+      {/* Full-Screen Painting - current */}
+      <div className="absolute inset-0">
         <Image
           src={currentArtwork.url}
           alt={currentArtwork.title}
@@ -148,6 +155,46 @@ export default function OilPaintingsPage() {
           priority
         />
       </div>
+
+      {/* Blurred Background - next painting, crossfades in on top */}
+      {nextIndex !== null && (
+        <div
+          className={`absolute inset-0 transition-opacity duration-500 ${
+            showNext ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <Image
+            src={artworks[nextIndex].url}
+            alt=""
+            fill
+            className="object-cover"
+            style={{
+              filter: "blur(24px) grayscale(60%)",
+              transform: "scale(1.1)",
+            }}
+            sizes="100vw"
+            priority
+          />
+        </div>
+      )}
+
+      {/* Full-Screen Painting - next, crossfades in on top */}
+      {nextIndex !== null && (
+        <div
+          className={`absolute inset-0 transition-opacity duration-500 ${
+            showNext ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <Image
+            src={artworks[nextIndex].url}
+            alt={artworks[nextIndex].title}
+            fill
+            className={getObjectFit(artworks[nextIndex].orientation)}
+            sizes="100vw"
+            priority
+          />
+        </div>
+      )}
 
       {/* Overlaid Navigation */}
       <nav
@@ -186,7 +233,7 @@ export default function OilPaintingsPage() {
       </nav>
 
       {/* Painting Counter */}
-      <div 
+      <div
         className="absolute top-6 right-6 text-white/50 text-sm tracking-widest font-light transition-opacity duration-500"
         style={{ opacity: showNav ? 1 : 0 }}
       >
