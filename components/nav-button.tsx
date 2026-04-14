@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { ArrowRight } from "lucide-react"
+import { ArrowUp, ArrowDown, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
 interface NavButtonProps {
@@ -10,14 +10,17 @@ interface NavButtonProps {
   onClick?: () => void
   href?: string
   onNavigate?: (href: string) => void
+  arrow?: 'right' | 'up' | 'down'
 }
 
-export function NavButton({ children, className = "", onClick, href, onNavigate }: NavButtonProps) {
+export function NavButton({ children, className = "", onClick, href, onNavigate, arrow = 'right' }: NavButtonProps) {
+  const ArrowIcon = arrow === 'up' ? ArrowUp : arrow === 'down' ? ArrowDown : ArrowRight
+
   const content = (
     <>
       <span className="inline-block">{children}</span>
-      <ArrowRight 
-        className="ml-1 h-4 w-4 hidden group-hover:block text-gray-300 group-hover:text-white" 
+      <ArrowIcon
+        className="ml-2 h-4 w-4 hidden group-hover:block text-gray-300 group-hover:text-white"
       />
     </>
   )

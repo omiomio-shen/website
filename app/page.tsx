@@ -267,7 +267,7 @@ function HomeContent() {
           }}
         >
           <div id="top-nav-button" className="pointer-events-auto">
-            <NavButton className="text-left">Product at Centrl</NavButton>
+            <NavButton className="text-left" arrow="up">Product at Centrl</NavButton>
           </div>
         </div>
 
@@ -281,9 +281,10 @@ function HomeContent() {
           }}
         >
           <div id="bottom-nav-button" className="pointer-events-auto">
-            <NavButton 
-              href="/oil-paintings" 
+            <NavButton
+              href="/oil-paintings"
               className="text-left"
+              arrow="down"
               onNavigate={(href) => startTransition(href)}
             >
               Oil paintings
