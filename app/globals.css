@@ -108,6 +108,15 @@
   animation: slideUp 650ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
 }
 
+@keyframes slideDown {
+  0%   { transform: translateY(-100vh); }
+  100% { transform: translateY(0); }
+}
+
+.page-slide-down {
+  animation: slideDown 650ms cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
 .animate-blink {
   animation: blink 1s step-end infinite;
 }
