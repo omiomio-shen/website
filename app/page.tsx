@@ -257,7 +257,7 @@ function HomeContent() {
         </div>
 
         {/* Navigation buttons */}
-        {/* Product at Centrl - visible when hovering top section */}
+        {/* Product work - visible when hovering top section */}
         <div
           className={`absolute transition-opacity duration-200 ${hoverSection === "top" ? "opacity-100" : "opacity-0"}`}
           style={{
@@ -267,7 +267,7 @@ function HomeContent() {
           }}
         >
           <div id="top-nav-button" className="pointer-events-auto">
-            <NavButton className="text-left" arrow="up">Product at Centrl</NavButton>
+            <NavButton className="text-left" arrow="up">Product work</NavButton>
           </div>
         </div>
 

@@ -239,7 +239,7 @@ export default function OilPaintingsPage() {
             >
               <button
                 onClick={goToPrevious}
-                className="text-gray-300 hover:text-white transition-colors px-1"
+                className="text-gray-200 hover:text-white transition-colors px-1"
                 aria-label="Previous painting"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -248,14 +248,14 @@ export default function OilPaintingsPage() {
               <a
                 href="/"
                 onClick={handleHomeClick}
-                className="text-gray-300 hover:text-white transition-colors text-lg cursor-pointer"
+                className="text-gray-200 hover:text-white transition-colors text-lg cursor-pointer"
               >
                 Home
               </a>
 
               <button
                 onClick={goToNext}
-                className="text-gray-300 hover:text-white transition-colors px-1"
+                className="text-gray-200 hover:text-white transition-colors px-1"
                 aria-label="Next painting"
               >
                 <ArrowRight className="h-4 w-4" />
