@@ -13,7 +13,7 @@ import { PageTransitionProvider, usePageTransition } from "@/lib/page-transition
 
 function HomeContent() {
   const [hoverSection, setHoverSection] = useState<string>("none")
-  const { isTransitioning, startTransition } = usePageTransition()
+  const { isTransitioning, transitionDirection, startTransition } = usePageTransition()
   const [bottomHeight, setBottomHeight] = useState(0)
   const [showControls, setShowControls] = useState(false)
   const [typedText, setTypedText] = useState("")
@@ -137,8 +137,31 @@ function HomeContent() {
 
   return (
     <div className="h-screen overflow-hidden">
-      {/* Sliding container: home (100vh) + painting preview (100vh) stacked vertically */}
-      <div className={isTransitioning ? "page-slide-up" : ""}>
+      {/* Sliding container: product work preview (100vh) + home (100vh) + painting preview (100vh).
+          At rest, translateY(-100vh) keeps home in view.
+          Slide down → product work preview from above. Slide up → painting preview from below. */}
+      <div
+        className={
+          isTransitioning
+            ? transitionDirection === 'down'
+              ? "page-slide-down"
+              : "page-slide-up-from-center"
+            : ""
+        }
+        style={{ transform: isTransitioning ? undefined : 'translateY(-100vh)' }}
+      >
+
+      {/* Product work preview — sits above home, slides into view when navigating to product work */}
+      <div className="h-screen relative bg-[#0C0F0E] overflow-hidden">
+        <Image
+          src="/images/bridge.jpeg"
+          alt=""
+          fill
+          style={{ objectFit: 'cover', filter: 'blur(2px) grayscale(60%)' }}
+          sizes="100vw"
+          priority
+        />
+      </div>
     <main
       className="relative flex h-screen flex-col items-center justify-center"
       style={{ backgroundColor: "#0C0F0E", ...rainStyles }}
@@ -267,7 +290,12 @@ function HomeContent() {
           }}
         >
           <div id="top-nav-button" className="pointer-events-auto">
-            <NavButton className="text-left" arrow="up">Product work</NavButton>
+            <NavButton
+              href="/product-work"
+              className="text-left"
+              arrow="up"
+              onNavigate={(href) => startTransition(href, 'down')}
+            >Product work</NavButton>
           </div>
         </div>
 
@@ -285,7 +313,7 @@ function HomeContent() {
               href="/oil-paintings"
               className="text-left"
               arrow="down"
-              onNavigate={(href) => startTransition(href)}
+              onNavigate={(href) => startTransition(href, 'up')}
             >
               Oil paintings
             </NavButton>
